@@ -1,8 +1,3 @@
-"""
-Comprehensive evaluation script for DQN agent on Crafter
-Tracks all metrics required by the assignment
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
