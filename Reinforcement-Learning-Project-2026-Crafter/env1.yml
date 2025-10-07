@@ -1,0 +1,31 @@
+name: crafter_env
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - pillow
+  - tqdm
+  - imageio
+  - opencv
+  - pyyaml
+  - bzip2
+  - zlib
+  - ffmpeg
+  - pip:
+      - gymnasium==0.29.1
+      - crafter==1.8.0
+      - stable-baselines3==2.3.0
+      - tensorboard
+      - torch>=2.0
+      - torchvision
+      - torchaudio
+      - pygame
+      - moviepy
+      - seaborn
+      - scikit-learn
