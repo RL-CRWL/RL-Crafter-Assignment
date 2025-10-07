@@ -155,7 +155,13 @@ if __name__ == "__main__":
     raw_env = crafter.Env()
     env = GymV21CompatibilityV0(env=raw_env)
     agent = ActorCriticAgent(env)
-    agent.train(num_episodes=1000)
+    agent.train(num_episodes=10)
+    env = crafter.Recorder(
+        env, './path/to/logdir',
+        save_stats=True,
+        save_video=False,
+        save_episode=False,
+    )
 
 
 
