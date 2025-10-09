@@ -2,6 +2,7 @@ import crafter
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from src.utils.wrappers import make_crafter_env
 
 # Create environment
 env = crafter.Env(size=(256, 256))  # Larger size for better visibility
