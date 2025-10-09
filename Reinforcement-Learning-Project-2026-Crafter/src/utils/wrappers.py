@@ -69,10 +69,10 @@ class CrafterGymWrapper(gym.Env):
         # Get the current agent position before taking the action (if available)
         if hasattr(self.env, 'player_pos'):
             old_position = getattr(self.env, 'player_pos', 'Unknown')
-            print(f"Agent position BEFORE action: {old_position}")
+            #print(f"Agent position BEFORE action: {old_position}")
         elif hasattr(self.env, '_player'):
             old_position = getattr(self.env._player, 'pos', 'Unknown')
-            print(f"Agent position BEFORE action: {old_position}")
+            #print(f"Agent position BEFORE action: {old_position}")
         else:
             print("Cannot access agent position - checking observation")
         
@@ -82,15 +82,15 @@ class CrafterGymWrapper(gym.Env):
         # DEBUG: Check position after the action
         if hasattr(self.env, 'player_pos'):
             new_position = getattr(self.env, 'player_pos', 'Unknown')
-            print(f"Agent position AFTER action: {new_position}")
+            #print(f"Agent position AFTER action: {new_position}")
         elif hasattr(self.env, '_player'):
             new_position = getattr(self.env._player, 'pos', 'Unknown')
-            print(f"Agent position AFTER action: {new_position}")
+            #print(f"Agent position AFTER action: {new_position}")
         
         # DEBUG: Print reward and other info
-        print(f"Reward received: {reward}")
+        ''' print(f"Reward received: {reward}")
         print(f"Episode done: {done}")
-        print("---")  # Separator for readability
+        print("---")  # Separator for readability'''
         
         # Crafter returns done=True when the agent dies
         # Gymnasium separates this into 'terminated' and 'truncated'
