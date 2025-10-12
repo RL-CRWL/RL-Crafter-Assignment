@@ -1,23 +1,98 @@
-import gym as old_gym
-import stable_baselines3
+import gymnasium as gym
+from stable_baselines3 import PPO, A2C, DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.monitor import Monitor
 import argparse
 import crafter
 from shimmy import GymV21CompatibilityV0
-from gym.envs.registration import register
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--outdir', default='logdir/crafter_reward-ppo/0')
-parser.add_argument('--steps', type=float, default=5e5)
+parser.add_argument('--steps', type=int, default=100000)
+parser.add_argument('--algorithm', default='ppo', choices=['ppo', 'a2c', 'dqn'])
+parser.add_argument('--record-video', action='store_true', help='Record videos during training') # supposed to save a video, but doesn't work yet
+parser.add_argument('--video-interval', type=int, default=100, help='Record every N episodes')
 args = parser.parse_args()
 
-register(id='CrafterNoReward-v1',entry_point=crafter.Env)
+def make_env():
+    # create the crafter environment (old gym)
+    crafter_env = crafter.Env(reward=True)
+    
+    # wrap with recorder
+    crafter_env = crafter.Recorder(
+        crafter_env, 
+        args.outdir,
+        save_stats=True,
+        save_video=False,
+        save_episode=False,
+    )
+    
+    # converts old gym to gymnasium using Shimmy
+    env = GymV21CompatibilityV0(env=crafter_env)
+    env = Monitor(env, filename=f"{args.outdir}/monitor")
+    
+    return env
 
-env = old_gym.make('CrafterNoReward-v1')  # Or CrafterNoReward-v1
-env = crafter.Recorder(
-  env, './path/to/logdir',
-  save_stats=True,
-  save_video=False,
-  save_episode=False,
+# wrap in vectorised environment for stable baselines
+env = DummyVecEnv([make_env])
+
+# possible models
+if args.algorithm == 'ppo':
+    model = PPO(
+        "CnnPolicy",
+        env,
+        verbose=1,
+        tensorboard_log=f"{args.outdir}/tensorboard/"
+    )
+elif args.algorithm == 'a2c':
+    model = A2C(
+        "CnnPolicy",
+        env,
+        verbose=1,
+        tensorboard_log=f"{args.outdir}/tensorboard/"
+    )
+elif args.algorithm == 'dqn':
+    model = DQN(
+        "CnnPolicy",
+        env,
+        verbose=1,
+        learning_rate=1e-4,
+        buffer_size=100000,
+        learning_starts=10000,
+        batch_size=32,
+        tau=1.0,
+        gamma=0.99,
+        train_freq=4,
+        gradient_steps=1,
+        target_update_interval=1000,
+        exploration_fraction=0.1,
+        exploration_initial_eps=1.0,
+        exploration_final_eps=0.05,
+        tensorboard_log=f"{args.outdir}/tensorboard/",
+        stats_window_size=100  # track last 100 episodes
+    )
+
+# training
+print(f"\n{'='*60}")
+print(f"Training {args.algorithm.upper()} for {args.steps:,} steps...")
+print(f"Output directory: {args.outdir}")
+print(f"{'='*60}\n")
+
+# how frequently we see we see the results
+log_interval = 10
+
+model.learn(
+    total_timesteps=args.steps,
+    progress_bar=True,
+    log_interval=log_interval
 )
-env = GymV21CompatibilityV0(env=env)  
 
+# prints bars for nicer visualisation
+print(f"\n{'='*60}")
+print(f"Training Complete")
+print(f"{'='*60}")
+model.save(f"{args.outdir}/{args.algorithm}_crafter")
+print(f"Model saved to {args.outdir}/{args.algorithm}_crafter")
+print(f"\nView results in TensorBoard:")
+print(f"  tensorboard --logdir {args.outdir}/tensorboard/")
+print(f"{'='*60}\n")
