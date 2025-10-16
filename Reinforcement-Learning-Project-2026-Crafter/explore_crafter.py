@@ -2,7 +2,7 @@
 Script to explore and understand the Crafter environment
 """
 import numpy as np
-from utils.wrappers import make_crafter_env
+from src.utils.wrappers import make_crafter_env
 
 def explore_environment():
     """Explore the Crafter environment structure"""
