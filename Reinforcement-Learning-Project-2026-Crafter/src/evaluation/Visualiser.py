@@ -1,24 +1,29 @@
-"""
-Comprehensive evaluation script for DQN agents on Crafter
-Evaluates all required metrics and generates comparison plots
+import sys
+import os
+from pathlib import Path
 
-Usage:
-    python evaluation/run_evaluation.py --model_path results/dqn_baseline/dqn_baseline_model.zip
-    python evaluation/run_evaluation.py --compare results/dqn_baseline results/dqn_v1
-"""
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 import argparse
-import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path
 from collections import defaultdict
+from datetime import datetime
 
-from utils.wrappers import make_crafter_env
-from agents.DQN_baseline import DQNAgent
+# Now import from src
+from src.utils.wrappers import make_crafter_env
 from stable_baselines3 import DQN
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("Warning: PIL not available. GIF creation will be skipped.")
 
 
 # Set style
@@ -29,9 +34,11 @@ plt.rcParams['figure.figsize'] = (12, 7)
 class CrafterEvaluator:
     """Comprehensive evaluator for Crafter agents"""
     
-    def __init__(self, n_episodes=20):
+    def __init__(self, n_episodes=20, create_gifs=False, gif_dir=None):
         self.n_episodes = n_episodes
         self.env = make_crafter_env()
+        self.create_gifs = create_gifs and PIL_AVAILABLE
+        self.gif_dir = gif_dir
         
         # 22 Crafter achievements
         self.achievements = [
@@ -47,6 +54,7 @@ class CrafterEvaluator:
         # Metrics storage
         self.episode_rewards = []
         self.episode_lengths = []
+        self.episode_frames = []
         self.achievement_unlocks = defaultdict(int)
         self.episode_achievements = []
     
@@ -55,6 +63,8 @@ class CrafterEvaluator:
         
         print("\n" + "="*70)
         print(f"EVALUATING {agent_name.upper()} OVER {self.n_episodes} EPISODES")
+        if self.create_gifs:
+            print("GIF RECORDING: ENABLED")
         print("="*70)
         
         for episode in range(self.n_episodes):
@@ -63,8 +73,15 @@ class CrafterEvaluator:
             episode_reward = 0
             episode_length = 0
             episode_achievements = set()
+            frames = []
             
             while not done:
+                # Record frame if creating GIFs
+                if self.create_gifs:
+                    frame = self.env.render()
+                    if frame is not None:
+                        frames.append(frame)
+                
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, terminated, truncated, info = self.env.step(action)
                 
@@ -81,6 +98,7 @@ class CrafterEvaluator:
             self.episode_rewards.append(episode_reward)
             self.episode_lengths.append(episode_length)
             self.episode_achievements.append(episode_achievements)
+            self.episode_frames.append(frames)
             
             # Update achievement counts
             for achievement in episode_achievements:
@@ -161,6 +179,49 @@ class CrafterEvaluator:
         
         print("="*70)
     
+    def save_gifs(self, agent_name):
+        """Save episode GIFs"""
+        
+        if not self.create_gifs or not self.gif_dir:
+            return
+        
+        os.makedirs(self.gif_dir, exist_ok=True)
+        
+        print(f"\nSaving GIFs...")
+        gif_count = 0
+        
+        for episode, frames in enumerate(self.episode_frames):
+            if len(frames) == 0:
+                continue
+            
+            # Convert frames to PIL Images
+            pil_frames = []
+            for frame in frames:
+                # Ensure frame is uint8
+                if frame.dtype != np.uint8:
+                    frame = (np.clip(frame, 0, 1) * 255).astype(np.uint8)
+                
+                pil_frames.append(Image.fromarray(frame))
+            
+            if pil_frames:
+                gif_path = os.path.join(self.gif_dir, 
+                                       f'{agent_name}_episode_{episode+1:03d}.gif')
+                
+                # Save as GIF with loop and duration
+                pil_frames[0].save(
+                    gif_path,
+                    save_all=True,
+                    append_images=pil_frames[1:],
+                    duration=100,  # 100ms per frame
+                    loop=0  # loop forever
+                )
+                gif_count += 1
+                
+                if (gif_count) % 5 == 0:
+                    print(f"  Saved {gif_count} GIFs...")
+        
+        print(f"✓ Saved {gif_count} GIFs to {self.gif_dir}")
+    
     def save_results(self, save_dir, agent_name):
         """Save evaluation results and plots"""
         
@@ -223,7 +284,7 @@ class CrafterEvaluator:
 
 
 def compare_agents(results_dirs, output_dir):
-    """Compare multiple agent results"""
+    """Compare multiple agent results from saved metrics"""
     
     print("\n" + "="*70)
     print("COMPARING AGENTS")
@@ -233,19 +294,26 @@ def compare_agents(results_dirs, output_dir):
     agent_names = []
     
     for result_dir in results_dirs:
-        agent_name = Path(result_dir).name
-        agent_names.append(agent_name)
+        # Try to find metrics.json in the directory
+        metrics_file = None
         
-        metrics_file = os.path.join(result_dir, 'evaluation', 
-                                   f'{agent_name}_metrics.json')
-        if os.path.exists(metrics_file):
+        # Check for *_metrics.json files in the directory
+        for file in os.listdir(result_dir):
+            if file.endswith('_metrics.json'):
+                metrics_file = os.path.join(result_dir, file)
+                agent_name = file.replace('_metrics.json', '')
+                break
+        
+        if metrics_file and os.path.exists(metrics_file):
+            agent_names.append(agent_name)
             with open(metrics_file, 'r') as f:
                 all_metrics[agent_name] = json.load(f)
+            print(f"✓ Loaded metrics for {agent_name}")
         else:
-            print(f"Warning: Could not find metrics for {agent_name}")
+            print(f"✗ Warning: Could not find metrics for {result_dir}")
     
     if not all_metrics:
-        print("No metrics found to compare")
+        print("✗ No metrics found to compare")
         return
     
     os.makedirs(output_dir, exist_ok=True)
@@ -302,7 +370,11 @@ def compare_agents(results_dirs, output_dir):
     
     # Achievement comparison
     fig, ax = plt.subplots(figsize=(10, 6))
-    geo_means = [all_metrics[name]['geometric_mean'] for name in agent_names]
+    geo_means = []
+    for name in agent_names:
+        geo_mean = all_metrics[name].get('geometric_mean', 
+                  all_metrics[name].get('geometric_mean_achievements', 0))
+        geo_means.append(geo_mean)
     
     ax.bar(agent_names, geo_means, alpha=0.7, color='green')
     ax.set_ylabel('Geometric Mean Achievement Rate (%)', fontsize=12)
@@ -317,35 +389,72 @@ def compare_agents(results_dirs, output_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Evaluate DQN agents on Crafter')
-    parser.add_argument('--model_path', type=str,
-                       help='Path to trained model')
+    parser = argparse.ArgumentParser(
+        description='Evaluate and visualize DQN agents on Crafter',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Evaluate a single model and generate plots
+  python Visualiser.py --model results/DQN_Baseline/dqn_baseline_model.zip --save_dir results/eval_plots
+
+  # Evaluate with GIF recording
+  python Visualiser.py --model results/DQN_Baseline/dqn_baseline_model.zip --create_gif --save_dir results/eval_plots --gif_dir results/gifs
+
+  # Compare multiple evaluation results
+  python Visualiser.py --compare results/eval_baseline results/eval_v1 --output results/comparison
+        """
+    )
+    
+    parser.add_argument('--model', type=str,
+                       help='Path to trained model to evaluate')
     parser.add_argument('--n_episodes', type=int, default=20,
-                       help='Number of evaluation episodes')
+                       help='Number of evaluation episodes (default: 20)')
     parser.add_argument('--save_dir', type=str, default='results/evaluation',
-                       help='Directory to save results')
+                       help='Directory to save evaluation results')
+    parser.add_argument('--create_gif', action='store_true',
+                       help='Create GIFs of episodes')
+    parser.add_argument('--gif_dir', type=str, default='results/gifs',
+                       help='Directory to save GIFs (used with --create_gif)')
     parser.add_argument('--compare', nargs='+',
-                       help='Multiple result directories to compare')
+                       help='Multiple evaluation result directories to compare')
+    parser.add_argument('--output', type=str, default='results/comparison',
+                       help='Output directory for comparison plots')
     
     args = parser.parse_args()
     
     if args.compare:
         # Compare multiple agents
-        compare_agents(args.compare, args.save_dir)
+        print(f"Comparing {len(args.compare)} evaluation results...")
+        compare_agents(args.compare, args.output)
     
-    elif args.model_path:
-        # Single agent evaluation
+    elif args.model:
+        # Single agent evaluation and visualization
         print("\n" + "="*70)
         print("LOADING MODEL")
         print("="*70)
         
-        model = DQN.load(args.model_path)
+        if not os.path.exists(args.model):
+            print(f"✗ Error: Model not found at {args.model}")
+            return
         
-        evaluator = CrafterEvaluator(n_episodes=args.n_episodes)
-        metrics = evaluator.evaluate(model, agent_name="DQN")
-        evaluator.save_results(args.save_dir, "dqn_baseline")
+        model = DQN.load(args.model)
+        print(f"✓ Model loaded from {args.model}")
         
-        print("\n✓ Evaluation complete!")
+        # Extract agent name from model path
+        agent_name = Path(args.model).parent.name
+        
+        evaluator = CrafterEvaluator(
+            n_episodes=args.n_episodes,
+            create_gifs=args.create_gif,
+            gif_dir=args.gif_dir if args.create_gif else None
+        )
+        metrics = evaluator.evaluate(model, agent_name=agent_name)
+        evaluator.save_results(args.save_dir, agent_name)
+        
+        if args.create_gif:
+            evaluator.save_gifs(agent_name)
+        
+        print(f"\n✓ Evaluation and visualization complete!")
     
     else:
         parser.print_help()

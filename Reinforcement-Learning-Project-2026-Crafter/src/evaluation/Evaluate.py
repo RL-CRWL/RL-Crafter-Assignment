@@ -1,11 +1,21 @@
+import sys
+import os
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
 import json
-import os
+import argparse
+
+# Now import from src
 from src.utils.wrappers import make_crafter_env
-from src.agents.DQN_baseline import DQNAgent
+from stable_baselines3 import DQN
 
 
 class CrafterEvaluator:
@@ -14,13 +24,11 @@ class CrafterEvaluator:
     Tracks: achievements, survival time, rewards
     """
     
-    def __init__(self, agent, n_episodes=20):
+    def __init__(self, n_episodes=20):
         """
         Args:
-            agent: Trained agent to evaluate
             n_episodes: Number of episodes for evaluation
         """
-        self.agent = agent
         self.n_episodes = n_episodes
         self.env = make_crafter_env()
         
@@ -40,7 +48,7 @@ class CrafterEvaluator:
         self.episode_lengths = []
         self.achievement_unlocks = defaultdict(int)
         
-    def evaluate(self):
+    def evaluate(self, model):
         """Run comprehensive evaluation"""
         
         print("="*70)
@@ -48,21 +56,22 @@ class CrafterEvaluator:
         print("="*70)
         
         for episode in range(self.n_episodes):
-            obs = self.env.reset()
+            obs, info = self.env.reset()
             done = False
             episode_reward = 0
             episode_length = 0
             episode_achievements = set()
             
             while not done:
-                # Get action from agent
-                action, _ = self.agent.model.predict(obs, deterministic=True)
+                # Get action from model
+                action, _ = model.predict(obs, deterministic=True)
                 
-                # Step environment
-                obs, reward, done, info = self.env.step(action)
+                # Step environment (Gymnasium API: obs, reward, terminated, truncated, info)
+                obs, reward, terminated, truncated, info = self.env.step(action)
                 
                 episode_reward += reward
                 episode_length += 1
+                done = terminated or truncated
                 
                 # Track achievements (if available in info)
                 if 'achievements' in info:
@@ -96,16 +105,16 @@ class CrafterEvaluator:
         metrics = {}
         
         # Reward metrics
-        metrics['mean_reward'] = np.mean(self.episode_rewards)
-        metrics['std_reward'] = np.std(self.episode_rewards)
-        metrics['min_reward'] = np.min(self.episode_rewards)
-        metrics['max_reward'] = np.max(self.episode_rewards)
+        metrics['mean_reward'] = float(np.mean(self.episode_rewards))
+        metrics['std_reward'] = float(np.std(self.episode_rewards))
+        metrics['min_reward'] = float(np.min(self.episode_rewards))
+        metrics['max_reward'] = float(np.max(self.episode_rewards))
         
         # Survival metrics
-        metrics['mean_survival'] = np.mean(self.episode_lengths)
-        metrics['std_survival'] = np.std(self.episode_lengths)
-        metrics['min_survival'] = np.min(self.episode_lengths)
-        metrics['max_survival'] = np.max(self.episode_lengths)
+        metrics['mean_survival'] = float(np.mean(self.episode_lengths))
+        metrics['std_survival'] = float(np.std(self.episode_lengths))
+        metrics['min_survival'] = float(np.min(self.episode_lengths))
+        metrics['max_survival'] = float(np.max(self.episode_lengths))
         
         # Achievement metrics
         achievement_rates = {}
@@ -121,7 +130,7 @@ class CrafterEvaluator:
             geometric_mean = np.exp(np.mean(np.log(rates))) * 100
         else:
             geometric_mean = 0.0
-        metrics['geometric_mean_achievements'] = geometric_mean
+        metrics['geometric_mean_achievements'] = float(geometric_mean)
         
         # Count unlocked achievements
         metrics['num_achievements_unlocked'] = sum(1 for r in achievement_rates.values() if r > 0)
@@ -226,19 +235,32 @@ class CrafterEvaluator:
 def main():
     """Main evaluation script"""
     
-    # Load trained agent
-    print("Loading trained DQN agent...")
-    agent = DQNAgent()
-    agent.load('results/dqn_baseline/dqn_baseline_model.zip')
+    parser = argparse.ArgumentParser(description='Evaluate DQN agent on Crafter')
+    parser.add_argument('--model', type=str, required=True,
+                       help='Path to trained DQN model')
+    parser.add_argument('--n_episodes', type=int, default=20,
+                       help='Number of evaluation episodes (default: 20)')
+    parser.add_argument('--save_dir', type=str, default='results/evaluation',
+                       help='Directory to save evaluation results')
     
-    # Create evaluator
-    evaluator = CrafterEvaluator(agent, n_episodes=20)
+    args = parser.parse_args()
     
-    # Run evaluation
-    metrics = evaluator.evaluate()
+    # Verify model exists
+    if not os.path.exists(args.model):
+        print(f"❌ Error: Model not found at {args.model}")
+        return
+    
+    print(f"Loading model from: {args.model}")
+    model = DQN.load(args.model)
+    print("✅ Model loaded successfully")
+    
+    # Create evaluator and run evaluation
+    evaluator = CrafterEvaluator(n_episodes=args.n_episodes)
+    metrics = evaluator.evaluate(model)
     
     # Save results
-    evaluator.save_results('results/dqn_baseline/evaluation')
+    evaluator.save_results(args.save_dir)
+    print(f"\n✅ Evaluation complete! Results saved to {args.save_dir}")
 
 
 if __name__ == "__main__":
