@@ -45,34 +45,34 @@ DQN_CONFIG = {
 # ============================================================================
 # PPO CONFIGURATION (Algorithm NOT from course - example)
 # ============================================================================
-PPO_CONFIG = {
-    'name': 'PPO_Baseline_GTX750Ti',
+# PPO_CONFIG = {
+#     'name': 'PPO_Baseline_GTX750Ti',
     
-    # Training parameters
-    'total_timesteps': 500000,
-    'eval_freq': 10000,
-    'save_freq': 50000,
+#     # Training parameters
+#     'total_timesteps': 500000,
+#     'eval_freq': 10000,
+#     'save_freq': 50000,
     
-    # PPO-specific hyperparameters
-    'learning_rate': 3e-4,
-    'n_steps': 512,                   # Reduced from 2048 for memory
-    'batch_size': 64,                 # Mini-batch size
-    'n_epochs': 4,                    # Reduced from 10 for faster training
-    'gamma': 0.99,
-    'gae_lambda': 0.95,
-    'clip_range': 0.2,
-    'ent_coef': 0.01,                 # Entropy coefficient for exploration
-    'vf_coef': 0.5,                   # Value function coefficient
-    'max_grad_norm': 0.5,
+#     # PPO-specific hyperparameters
+#     'learning_rate': 3e-4,
+#     'n_steps': 512,                   # Reduced from 2048 for memory
+#     'batch_size': 64,                 # Mini-batch size
+#     'n_epochs': 4,                    # Reduced from 10 for faster training
+#     'gamma': 0.99,
+#     'gae_lambda': 0.95,
+#     'clip_range': 0.2,
+#     'ent_coef': 0.01,                 # Entropy coefficient for exploration
+#     'vf_coef': 0.5,                   # Value function coefficient
+#     'max_grad_norm': 0.5,
     
-    # Environment configuration
-    'preprocess_type': 'none',
-    'reward_shaping': 'none',
+#     # Environment configuration
+#     'preprocess_type': 'none',
+#     'reward_shaping': 'none',
     
-    # Hardware
-    'device': 'cuda',
-    'seed': 42,
-}
+#     # Hardware
+#     'device': 'cuda',
+#     'seed': 42,
+# }
 
 # ============================================================================
 # IMPROVEMENT CONFIGURATIONS
@@ -141,7 +141,7 @@ def get_config(config_name='DQN_CONFIG'):
     """
     configs = {
         'DQN_CONFIG': DQN_CONFIG,
-        'PPO_CONFIG': PPO_CONFIG,
+        # 'PPO_CONFIG': PPO_CONFIG,
         'DQN_IMPROVEMENT_1': DQN_IMPROVEMENT_1,
         'DQN_IMPROVEMENT_2': DQN_IMPROVEMENT_2,
         'QUICK_TEST_CONFIG': QUICK_TEST_CONFIG,
