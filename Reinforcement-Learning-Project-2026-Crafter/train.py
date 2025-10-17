@@ -2,6 +2,8 @@ import gymnasium as gym
 from stable_baselines3 import PPO, A2C, DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.callbacks import CheckpointCallback
+from networks import ModifiedCNN
 import argparse
 import crafter
 from shimmy import GymV21CompatibilityV0
@@ -10,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--outdir', default='logdir/crafter_reward-ppo/0')
 parser.add_argument('--steps', type=int, default=1000)
 parser.add_argument('--algorithm', default='ppo', choices=['ppo', 'a2c', 'dqn'])
-parser.add_argument('--record-video', action='store_true', help='Record videos during training') # supposed to save a video, but doesn't work yet
+parser.add_argument('--record-video', action='store_true', help='Record videos during training')
 parser.add_argument('--video-interval', type=int, default=100, help='Record every N episodes')
 args = parser.parse_args()
 
@@ -35,6 +37,12 @@ def make_env():
 
 # wrap in vectorised environment for stable baselines
 env = DummyVecEnv([make_env])
+
+policy_kwargs = dict(
+    features_extractor_class=ModifiedCNN,
+    features_extractor_kwargs=dict(features_dim=512)
+)
+
 
 # possible models
 if args.algorithm == 'ppo':
@@ -61,30 +69,26 @@ elif args.algorithm == 'a2c':
         tensorboard_log=f"{args.outdir}/tensorboard/",
     )
 elif args.algorithm == 'dqn':
-    model = DQN(
-        "MlpPolicy",
+        model = DQN(
+        "CnnPolicy",
         env,
-        verbose=1,
-        learning_rate=2.5e-4,
-        buffer_size=400_000,
+        learning_rate=1e-4,
+        buffer_size=500_000,
         learning_starts=50_000,
-        batch_size=256,
+        batch_size=64,
         gamma=0.99,
         train_freq=4,
         gradient_steps=1,
         target_update_interval=10_000,
-        exploration_fraction=0.1,
+        exploration_fraction=0.3,
         exploration_initial_eps=1.0,
         exploration_final_eps=0.01,
-        max_grad_norm=10.0,
-        optimize_memory_usage=False,
-        policy_kwargs=dict(net_arch=[512]),
-        # exploration_fraction=0.1,
-        # exploration_initial_eps=1.0,
-        # exploration_final_eps=0.05,
-        tensorboard_log=f"{args.outdir}/tensorboard/",
-        # stats_window_size=100  # track last 100 episodes
+        policy_kwargs=policy_kwargs,
+        verbose=1,
+        tensorboard_log="./tensorboard/dqn/",
     )
+
+
 
 # training
 print(f"\n{'='*60}")
@@ -94,11 +98,12 @@ print(f"{'='*60}\n")
 
 # how frequently we see we see the results
 log_interval = 10
-
+checkpoint_callback = CheckpointCallback(save_freq=10000, save_path=args.outdir, name_prefix='crafter_model')
 model.learn(
     total_timesteps=args.steps,
     progress_bar=True,
-    log_interval=log_interval
+    log_interval=log_interval,
+    callback=checkpoint_callback
 )
 
 # prints bars for nicer visualisation
