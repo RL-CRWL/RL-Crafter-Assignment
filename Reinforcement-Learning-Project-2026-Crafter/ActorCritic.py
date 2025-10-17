@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from src.utils.wrappers import make_crafter_env
 
+
 #code: adapted from geeksForgeeks - https://www.geeksforgeeks.org/machine-learning/actor-critic-algorithm-in-reinforcement-learning/
 
 class ActorCriticAgent:
