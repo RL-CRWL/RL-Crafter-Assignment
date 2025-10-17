@@ -8,7 +8,7 @@ from shimmy import GymV21CompatibilityV0
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--outdir', default='logdir/crafter_reward-ppo/0')
-parser.add_argument('--steps', type=int, default=100000)
+parser.add_argument('--steps', type=int, default=1000)
 parser.add_argument('--algorithm', default='ppo', choices=['ppo', 'a2c', 'dqn'])
 parser.add_argument('--record-video', action='store_true', help='Record videos during training') # supposed to save a video, but doesn't work yet
 parser.add_argument('--video-interval', type=int, default=100, help='Record every N episodes')
@@ -23,7 +23,7 @@ def make_env():
         crafter_env, 
         args.outdir,
         save_stats=True,
-        save_video=False,
+        save_video=True,
         save_episode=False,
     )
     
@@ -49,27 +49,41 @@ elif args.algorithm == 'a2c':
         "CnnPolicy",
         env,
         verbose=1,
-        tensorboard_log=f"{args.outdir}/tensorboard/"
+        learning_rate=2.5e-4,
+        n_steps=5,
+        gamma=0.99,
+        gae_lambda=0.95,
+        ent_coef=0.01,
+        vf_coef=0.5,
+        max_grad_norm=0.5,
+        normalize_advantage=True,
+        policy_kwargs=dict(net_arch=dict(pi=[512, 256], vf=[512, 256])),
+        tensorboard_log=f"{args.outdir}/tensorboard/",
     )
 elif args.algorithm == 'dqn':
     model = DQN(
-        "CnnPolicy",
+        "MlpPolicy",
         env,
         verbose=1,
-        learning_rate=1e-4,
-        buffer_size=100000,
-        learning_starts=10000,
-        batch_size=32,
-        tau=1.0,
+        learning_rate=2.5e-4,
+        buffer_size=400_000,
+        learning_starts=50_000,
+        batch_size=256,
         gamma=0.99,
         train_freq=4,
         gradient_steps=1,
-        target_update_interval=1000,
+        target_update_interval=10_000,
         exploration_fraction=0.1,
         exploration_initial_eps=1.0,
-        exploration_final_eps=0.05,
+        exploration_final_eps=0.01,
+        max_grad_norm=10.0,
+        optimize_memory_usage=False,
+        policy_kwargs=dict(net_arch=[512]),
+        # exploration_fraction=0.1,
+        # exploration_initial_eps=1.0,
+        # exploration_final_eps=0.05,
         tensorboard_log=f"{args.outdir}/tensorboard/",
-        stats_window_size=100  # track last 100 episodes
+        # stats_window_size=100  # track last 100 episodes
     )
 
 # training
