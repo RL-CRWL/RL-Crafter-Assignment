@@ -38,9 +38,11 @@ class CrafterGymnasiumWrapper(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def render(self, mode='rgb_array'):
-        # Provide actual rendered RGB array
-        return self._env.render(mode=mode)
-        # If mode == 'human': can add a display method here if needed
+        # Crafter's render() doesn't take mode argument
+        # It always returns RGB array
+        if mode != 'rgb_array':
+            raise ValueError(f"Unsupported render mode: {mode}. Only 'rgb_array' is supported.")
+        return self._env.render()
 
     def close(self):
         if hasattr(self._env, 'close'):
