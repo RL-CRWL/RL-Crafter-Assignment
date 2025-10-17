@@ -5,7 +5,6 @@ Script to explore and understand the Crafter environment
 """
 
 import numpy as np
-
 from src.utils.wrappers import make_crafter_env
 
 def explore_environment():

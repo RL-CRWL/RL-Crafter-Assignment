@@ -5,15 +5,17 @@ This implementation uses Stable Baselines3 for the base DQN algorithm.
 """
 
 import os
+import sys
 import numpy as np
 import torch
 from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.wrappers import make_crafter_env
 
 
@@ -49,12 +51,13 @@ class CrafterMetricsCallback(BaseCallback):
         """Run evaluation episodes"""
         rewards = []
         for _ in range(n_episodes):
-            obs = self.eval_env.reset()
+            obs, info = self.eval_env.reset()
             done = False
             episode_reward = 0
             while not done:
                 action, _ = self.model.predict(obs, deterministic=True)
-                obs, reward, done, info = self.eval_env.step(action)
+                obs, reward, terminated, truncated, info = self.eval_env.step(action)
+                done = terminated or truncated
                 episode_reward += reward
             rewards.append(episode_reward)
         return np.mean(rewards)
@@ -66,7 +69,6 @@ class DQNAgent:
     """
     
     def __init__(self, 
-                 env_name="CrafterPartial-v1",
                  learning_rate=1e-4,
                  buffer_size=100000,
                  learning_starts=10000,
@@ -84,7 +86,6 @@ class DQNAgent:
         Initialize DQN agent with hyperparameters
         
         Args:
-            env_name: Crafter environment name
             learning_rate: Learning rate for optimizer
             buffer_size: Size of replay buffer
             learning_starts: Steps before training starts
@@ -100,7 +101,6 @@ class DQNAgent:
             seed: Random seed
         """
         
-        self.env_name = env_name
         self.seed = seed
         
         # Create environments
@@ -108,8 +108,8 @@ class DQNAgent:
         self.eval_env = make_crafter_env()
         
         # Set seeds
-        self.train_env.seed(seed)
-        self.eval_env.seed(seed + 100)
+        self.train_env.reset(seed=seed)
+        self.eval_env.reset(seed=seed + 100)
         
         # DQN hyperparameters
         self.hyperparameters = {
@@ -255,14 +255,15 @@ class DQNAgent:
         episode_lengths = []
         
         for episode in range(n_episodes):
-            obs = self.eval_env.reset()
+            obs, info = self.eval_env.reset()
             done = False
             episode_reward = 0
             episode_length = 0
             
             while not done:
                 action, _ = self.model.predict(obs, deterministic=True)
-                obs, reward, done, info = self.eval_env.step(action)
+                obs, reward, terminated, truncated, info = self.eval_env.step(action)
+                done = terminated or truncated
                 episode_reward += reward
                 episode_length += 1
             
