@@ -20,9 +20,68 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from src.utils.wrappers import make_crafter_env
+import os
+import imageio  # pip install imageio
+
+
 
 
 #code: adapted from geeksForgeeks - https://www.geeksforgeeks.org/machine-learning/actor-critic-algorithm-in-reinforcement-learning/
+
+RESULTS_DIR = "actorcritic_results"
+SUBDIRS = {
+    "models": os.path.join(RESULTS_DIR, "models"),
+    "plots": os.path.join(RESULTS_DIR, "plots"),
+    "gifs": os.path.join(RESULTS_DIR, "gifs"),
+    "logs": os.path.join(RESULTS_DIR, "logs"),
+}
+for path in SUBDIRS.values():
+    os.makedirs(path, exist_ok=True)
+
+def save_model(actor, filename="actor_critic_model.h5"):
+    save_path = os.path.join(SUBDIRS["models"], filename)
+    actor.save(save_path)
+
+def save_reward_plot(rewards, type="training"):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(12, 6))
+    plt.plot(rewards)
+    plt.title(f"{type.capitalize()} Rewards")
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.tight_layout()
+    path = os.path.join(SUBDIRS["plots"], f"{type}_rewards.png")
+    plt.savefig(path)
+    plt.close()
+
+def save_reward_distribution(rewards):
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.hist(rewards, bins=50, alpha=0.7)
+    plt.title("Reward Distribution")
+    plt.xlabel("Reward")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    path = os.path.join(SUBDIRS["plots"], "reward_distribution.png")
+    plt.savefig(path)
+    plt.close()
+
+def save_survival_distribution(survival_times):
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.hist(survival_times, bins=50, alpha=0.7)
+    plt.title("Survival Distribution")
+    plt.xlabel("Steps Survived")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    path = os.path.join(SUBDIRS["plots"], "survival_distribution.png")
+    plt.savefig(path)
+    plt.close()
+
+def save_episode_gif(frames, episode_num):
+    path = os.path.join(SUBDIRS["gifs"], f"episode_{episode_num}.gif")
+    imageio.mimsave(path, frames, duration=0.1)
+
 
 class ActorCriticAgent:
     def __init__(self, env, actor_lr=0.0001, critic_lr=0.0005, gamma=0.99, entropy_coef=0.01):
@@ -360,26 +419,73 @@ if __name__ == "__main__":
     print(f"Action space: {env.action_space}")
     print("="*60)
 
-    # Create agent with improved hyperparameters
     agent = ActorCriticAgent(
-        env, 
-        actor_lr=0.0001,      # Lower learning rate for stability
-        critic_lr=0.0005,     # Slightly higher for critic
-        gamma=0.99,           # Standard discount factor
-        entropy_coef=0.02     # Entropy bonus for exploration
-    )
-
-    # Train with visualization and reduced console output
-    # Set print_every_n_steps higher to reduce console spam
+        env,
+        actor_lr=0.0001,
+        critic_lr=0.0005,
+        gamma=0.99,
+        entropy_coef=0.02
+    )  
     rewards = agent.train(
-        num_episodes=20, 
-        max_steps=500, 
+        num_episodes=20,
+        max_steps=500,
         visualize=True,
-        print_every_n_steps=100  # Only print every 100 steps
+        print_every_n_steps=100
     )
 
-    print(f"\nFinal Statistics:")
-    print(f"  Average Reward: {np.mean(rewards):.2f}")
-    print(f"  Best Reward: {np.max(rewards):.2f}")
-    print(f"  Worst Reward: {np.min(rewards):.2f}")
-    print(f"  Std Deviation: {np.std(rewards):.2f}")
+    # Save model and reward plots
+    save_model(agent.actor)
+    save_reward_plot(rewards, "training")
+    save_reward_distribution(rewards)
+
+    # --- Survival statistics ---
+    survival_times = []
+    EVAL_EPISODES = 10
+    for episode in range(EVAL_EPISODES):
+        state, _ = env.reset()
+        done = False
+        steps = 0
+        while not done:
+            action, _ = agent.select_action(state, training=False)
+            next_state, reward, done, truncated, _ = env.step(action)
+            done = done or truncated
+            state = next_state
+            steps += 1
+        survival_times.append(steps)
+    save_survival_distribution(survival_times)
+
+    # --- Evaluation reward plot ---
+    evaluation_rewards = []
+    for episode in range(EVAL_EPISODES):
+        state, _ = env.reset()
+        done = False
+        total_reward = 0
+        while not done:
+            action, _ = agent.select_action(state, training=False)
+            next_state, reward, done, truncated, _ = env.step(action)
+            done = done or truncated
+            state = next_state
+            total_reward += reward
+        evaluation_rewards.append(total_reward)
+    save_reward_plot(evaluation_rewards, "evaluation")
+
+    # --- GIFs ---
+    for episode in range(3):  # 3 episodes, or as many as you want
+        state, _ = env.reset()
+        done = False
+        frames = []
+        while not done:
+            frame = env.render(mode='rgb_array')
+            frames.append(frame)
+            action, _ = agent.select_action(state, training=False)
+            next_state, reward, done, truncated, _ = env.step(action)
+            done = done or truncated
+            state = next_state
+        save_episode_gif(frames, episode)
+
+    print("\nFinal Statistics:")
+    print(f" Average Reward: {np.mean(rewards):.2f}")
+    print(f" Best Reward: {np.max(rewards):.2f}")
+    print(f" Worst Reward: {np.min(rewards):.2f}")
+    print(f" Std Deviation: {np.std(rewards):.2f}")
+
