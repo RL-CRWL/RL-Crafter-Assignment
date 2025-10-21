@@ -2,9 +2,9 @@
 Training script using configuration files optimized for GTX 750 Ti
 
 Usage:
-    python scripts/train.py --config DQN_CONFIG
-    python scripts/train.py --config DQN_IMPROVEMENT_1
-    python scripts/train.py --config QUICK_TEST_CONFIG
+    python scripts/train_with_config.py --config DQN_CONFIG
+    python scripts/train_with_config.py --config DQN_IMPROVEMENT_1
+    python scripts/train_with_config.py --config QUICK_TEST_CONFIG
 """
 
 import argparse
@@ -16,8 +16,72 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.agents.DQN_baseline import DQNAgent
 from configs.configs import get_config, print_config, estimate_memory_usage
+
+# Import both baseline and improvement agents
+from src.agents.DQN_baseline import DQNAgent
+try:
+    from src.agents.DQN_improv1 import DQNImprovement1
+    HAS_IMPROVEMENT1 = True
+except ImportError:
+    HAS_IMPROVEMENT1 = False
+    print("⚠ Warning: DQN_improvement1.py not found. Only baseline available.")
+
+
+def create_agent(config):
+    """
+    Create appropriate agent based on config
+    
+    Args:
+        config: Configuration dictionary
+    
+    Returns:
+        Agent instance (DQNAgent or DQNImprovement1)
+    """
+    # Check if this is an improvement config
+    is_improvement1 = 'improvement1' in config['name'].lower() or config.get('use_custom_cnn', False)
+    
+    if is_improvement1:
+        if not HAS_IMPROVEMENT1:
+            print("❌ ERROR: Improvement 1 config selected but DQN_improvement1.py not found!")
+            print("   Falling back to baseline agent...")
+            is_improvement1 = False
+        else:
+            print("🚀 Creating DQN Improvement 1 agent...")
+            return DQNImprovement1(
+                learning_rate=config['learning_rate'],
+                buffer_size=config['buffer_size'],
+                learning_starts=config['learning_starts'],
+                batch_size=config['batch_size'],
+                gamma=config['gamma'],
+                target_update_interval=config.get('target_update_interval', 10000),
+                exploration_fraction=config['exploration_fraction'],
+                exploration_initial_eps=config['exploration_initial_eps'],
+                exploration_final_eps=config['exploration_final_eps'],
+                train_freq=config.get('train_freq', 4),
+                gradient_steps=config.get('gradient_steps', 1),
+                device=config['device'],
+                seed=config['seed'],
+                use_frame_stacking=config.get('use_frame_stacking', False)
+            )
+    
+    # Create baseline agent
+    print("🔧 Creating DQN Baseline agent...")
+    return DQNAgent(
+        learning_rate=config['learning_rate'],
+        buffer_size=config['buffer_size'],
+        learning_starts=config['learning_starts'],
+        batch_size=config['batch_size'],
+        gamma=config['gamma'],
+        target_update_interval=config.get('target_update_interval', 10000),
+        exploration_fraction=config['exploration_fraction'],
+        exploration_initial_eps=config['exploration_initial_eps'],
+        exploration_final_eps=config['exploration_final_eps'],
+        train_freq=config.get('train_freq', 4),
+        gradient_steps=config.get('gradient_steps', 1),
+        device=config['device'],
+        seed=config['seed']
+    )
 
 
 def monitor_gpu_memory():

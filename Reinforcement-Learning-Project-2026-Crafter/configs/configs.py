@@ -45,45 +45,84 @@ DQN_CONFIG = {
 # ============================================================================
 # PPO CONFIGURATION (Algorithm NOT from course - example)
 # ============================================================================
-# PPO_CONFIG = {
-#     'name': 'PPO_Baseline_GTX750Ti',
+PPO_CONFIG = {
+    'name': 'PPO_Baseline_GTX750Ti',
     
-#     # Training parameters
-#     'total_timesteps': 500000,
-#     'eval_freq': 10000,
-#     'save_freq': 50000,
+    # Training parameters
+    'total_timesteps': 500000,
+    'eval_freq': 10000,
+    'save_freq': 50000,
     
-#     # PPO-specific hyperparameters
-#     'learning_rate': 3e-4,
-#     'n_steps': 512,                   # Reduced from 2048 for memory
-#     'batch_size': 64,                 # Mini-batch size
-#     'n_epochs': 4,                    # Reduced from 10 for faster training
-#     'gamma': 0.99,
-#     'gae_lambda': 0.95,
-#     'clip_range': 0.2,
-#     'ent_coef': 0.01,                 # Entropy coefficient for exploration
-#     'vf_coef': 0.5,                   # Value function coefficient
-#     'max_grad_norm': 0.5,
+    # PPO-specific hyperparameters
+    'learning_rate': 3e-4,
+    'n_steps': 512,                   # Reduced from 2048 for memory
+    'batch_size': 64,                 # Mini-batch size
+    'n_epochs': 4,                    # Reduced from 10 for faster training
+    'gamma': 0.99,
+    'gae_lambda': 0.95,
+    'clip_range': 0.2,
+    'ent_coef': 0.01,                 # Entropy coefficient for exploration
+    'vf_coef': 0.5,                   # Value function coefficient
+    'max_grad_norm': 0.5,
     
-#     # Environment configuration
-#     'preprocess_type': 'none',
-#     'reward_shaping': 'none',
+    # Environment configuration
+    'preprocess_type': 'none',
+    'reward_shaping': 'none',
     
-#     # Hardware
-#     'device': 'cuda',
-#     'seed': 42,
-# }
+    # Hardware
+    'device': 'cuda',
+    'seed': 42,
+}
 
 # ============================================================================
 # IMPROVEMENT CONFIGURATIONS
 # ============================================================================
 
-# Improvement 1: Observation Preprocessing
+# Improvement 1: Observation Preprocessing + Better CNN
+
+# DQN_IMPROVEMENT_1 = {
+#     **DQN_CONFIG,
+#     'name': 'DQN_Improvement1_Normalize_CNN',
+#     'preprocess_type': 'normalize',   # Normalize observations to [0, 1]
+#     'learning_rate': 2.5e-4,          # Slightly higher LR with normalization
+#     'batch_size': 64,                 # Larger batches for stability
+#     'buffer_size': 100000,            # Larger buffer
+#     'learning_starts': 10000,         # More exploration before training
+#     'exploration_fraction': 0.2,      # Longer exploration period
+#     'exploration_final_eps': 0.02,    # Lower final epsilon
+#     'use_custom_cnn': True,           # Use improved CNN architecture
+#     'use_frame_stacking': False,       # Stack 3 frames for temporal info
+# }
+
 DQN_IMPROVEMENT_1 = {
-    **DQN_CONFIG,
-    'name': 'DQN_Improvement1_Normalize',
-    'preprocess_type': 'normalize',   # Normalize observations to [0, 1]
-    'learning_rate': 2.5e-4,          # Slightly higher LR with normalized obs
+    'name': 'DQN_Improvement1_Normalize_CNN_Safe',
+    'total_timesteps': 500000,
+    'eval_freq': 10000,
+    'save_freq': 50000,
+    
+    # Reduced for memory safety
+    'batch_size': 32,                 # Reduced from 64
+    'buffer_size': 75000,             # Reduced from 100K
+    'learning_starts': 10000,
+    
+    'learning_rate': 2.5e-4,
+    'gamma': 0.99,
+    'target_update_interval': 5000,
+    'train_freq': 4,
+    'gradient_steps': 1,
+    
+    'exploration_fraction': 0.2,
+    'exploration_initial_eps': 1.0,
+    'exploration_final_eps': 0.02,
+    
+    # Improvements
+    'preprocess_type': 'normalize',
+    'reward_shaping': 'none',
+    'use_custom_cnn': True,
+    'use_frame_stacking': False,      # Disabled for memory
+    
+    'device': 'cuda',
+    'seed': 42,
 }
 
 # Improvement 2: Reward Shaping
@@ -141,7 +180,7 @@ def get_config(config_name='DQN_CONFIG'):
     """
     configs = {
         'DQN_CONFIG': DQN_CONFIG,
-        # 'PPO_CONFIG': PPO_CONFIG,
+        'PPO_CONFIG': PPO_CONFIG,
         'DQN_IMPROVEMENT_1': DQN_IMPROVEMENT_1,
         'DQN_IMPROVEMENT_2': DQN_IMPROVEMENT_2,
         'QUICK_TEST_CONFIG': QUICK_TEST_CONFIG,
