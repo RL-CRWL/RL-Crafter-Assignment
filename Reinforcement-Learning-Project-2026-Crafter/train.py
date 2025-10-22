@@ -1,6 +1,6 @@
 import gymnasium as gym
 from stable_baselines3 import PPO, A2C, DQN
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback
 from networks import ModifiedCNN
@@ -37,6 +37,7 @@ def make_env():
 
 # wrap in vectorised environment for stable baselines
 env = DummyVecEnv([make_env])
+env = VecFrameStack(env, n_stack=4)
 
 policy_kwargs = dict(
     features_extractor_class=ModifiedCNN,
@@ -73,8 +74,8 @@ elif args.algorithm == 'dqn':
         "CnnPolicy",
         env,
         learning_rate=1e-4,
-        buffer_size=500_000,
-        learning_starts=50_000,
+        buffer_size=100_000,
+        learning_starts=10_000,
         batch_size=64,
         gamma=0.99,
         train_freq=4,
