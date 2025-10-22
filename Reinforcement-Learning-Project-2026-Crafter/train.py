@@ -1,12 +1,13 @@
 import gymnasium as gym
 from stable_baselines3 import PPO, A2C, DQN
-from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from networks import ModifiedCNN
 import argparse
 import crafter
 from shimmy import GymV21CompatibilityV0
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--outdir', default='logdir/crafter_reward-ppo/0')
@@ -35,9 +36,16 @@ def make_env():
     
     return env
 
+def make_vec_env():
+    """Creates a fully wrapped vectorized env with consistent wrappers."""
+    env = DummyVecEnv([make_env])
+    env = VecFrameStack(env, n_stack=4)
+    env = VecTransposeImage(env)  # ensure channel order consistency
+    return env
+
 # wrap in vectorised environment for stable baselines
-env = DummyVecEnv([make_env])
-env = VecFrameStack(env, n_stack=4)
+env = make_vec_env()
+eval_env = make_vec_env()
 
 policy_kwargs = dict(
     features_extractor_class=ModifiedCNN,
@@ -98,13 +106,27 @@ print(f"Output directory: {args.outdir}")
 print(f"{'='*60}\n")
 
 # how frequently we see we see the results
-log_interval = 10
 checkpoint_callback = CheckpointCallback(save_freq=10000, save_path=args.outdir, name_prefix='crafter_model')
+
+eval_callback = EvalCallback(
+    eval_env,
+    best_model_save_path=os.path.join(args.outdir, 'best_model'),
+    log_path=os.path.join(args.outdir, 'eval_logs'),
+    eval_freq=1000,
+    n_eval_episodes=10,
+    deterministic=True,
+    render=False,
+    verbose=1,
+)
+
+callback = [checkpoint_callback, eval_callback]
+
+log_interval = 10
 model.learn(
     total_timesteps=args.steps,
     progress_bar=True,
     log_interval=log_interval,
-    callback=checkpoint_callback
+    callback=callback
 )
 
 # prints bars for nicer visualisation
