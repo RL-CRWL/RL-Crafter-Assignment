@@ -29,3 +29,5 @@ dependencies:
       - moviepy
       - seaborn
       - scikit-learn
+      # added this as it is required for test_crafter.py to run on fifi's system
+      - ruamel.yaml==0.17.21
