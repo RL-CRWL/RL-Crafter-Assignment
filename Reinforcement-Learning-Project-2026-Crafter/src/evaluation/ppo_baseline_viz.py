@@ -9,7 +9,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # === Load environment and model ===
 env = make_crafter_env()
-model = PPO.load("../../results/PPO/ppo_baseline/ppo_baseline_model", env=env)
+model_path = 'Reinforcement-Learning-Project-2026-Crafter/results/PPO/ppo_baseline'
+model = PPO.load(model_path, env=env)
 
 # === Parameters ===
 n_eval_episodes = 30   # Run more episodes to find highlights
