@@ -8,7 +8,7 @@ import imageio
 
 
 env = make_crafter_env()
-model = PPO.load("../agents/results/ppo_baseline/ppo_baseline_model", env=env)
+model = PPO.load("../../results/PPO/ppo_baseline/ppo_baseline_model", env=env)
 
 n_episodes = 10 
 
