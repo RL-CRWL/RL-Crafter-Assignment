@@ -70,7 +70,7 @@ class PPOAgent:
                  gae_lambda=0.95,
                  clip_range=0.2,
                  ent_coef=0.01,
-                 device='auto',
+                 device='auto', # attempts to use gpu by default
                  seed=42):
         self.seed = seed
         # Create environments
@@ -233,9 +233,9 @@ def main():
     )
     # Train
     agent.train(
-        total_timesteps=500000,
+        total_timesteps=2000000,
         eval_freq=10000,
-        save_dir='results/ppo_baseline'
+        save_dir='Reinforcement-Learning-Project-2026-Crafter/results/PPO/ppo_baseline'
     )
     # Evaluate
     agent.evaluate(n_episodes=10)
