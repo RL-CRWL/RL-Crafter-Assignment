@@ -1,7 +1,4 @@
 from stable_baselines3 import PPO
-
-import numpy as np
-import imageio
 import os
 import sys
 
