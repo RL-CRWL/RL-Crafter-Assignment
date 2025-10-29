@@ -9,12 +9,12 @@ from utils.wrappers import make_crafter_env
 
 # === Load environment and model ===
 env = make_crafter_env()
-model_path = 'Reinforcement-Learning-Project-2026-Crafter/results/ppo_reward_shaped/ppo_shaped_model.zip'
+model_path = 'Reinforcement-Learning-Project-2026-Crafter/src/agents/results/ppo_rnd/ppo_rnd_model.zip'
 model = PPO.load(model_path, env=env)
 
 # === Parameters ===
 n_eval_episodes = 30   # Run more episodes to find highlights
-gif_dir = "Reinforcement-Learning-Project-2026-Crafter/results/gifs/ppo_reward_shaped_highlights"
+gif_dir = "Reinforcement-Learning-Project-2026-Crafter/results/gifs/ppo_rnd_highlights"
 os.makedirs(gif_dir, exist_ok=True)
 
 episode_data = []  # store (reward, length, frames, maybe achievements)
