@@ -45,7 +45,7 @@ try:
     print("  ✓ DQNImprovement2")
     HAS_IMPROVEMENT2 = True
 except ImportError as e:
-    print(f"  ✗ DQNImprovement2 failed: {e}")
+    print(f"  ✗ DQNImprovement2 not found (add it to src/agents/ when ready)")
     HAS_IMPROVEMENT2 = False
 
 

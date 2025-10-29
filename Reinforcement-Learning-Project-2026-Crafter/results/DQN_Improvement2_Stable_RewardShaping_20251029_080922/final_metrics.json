@@ -1,0 +1,15 @@
+{
+  "mean_reward": 2.2,
+  "std_reward": 1.3000000000000003,
+  "mean_length": 207.7,
+  "std_length": 54.20894760092654,
+  "total_unique_achievements": 6,
+  "achievement_counts": {
+    "collect_wood": 10,
+    "place_table": 9,
+    "collect_sapling": 4,
+    "wake_up": 4,
+    "place_plant": 2,
+    "collect_drink": 2
+  }
+}
