@@ -1,0 +1,101 @@
+\documentclass[twocolumn]{article}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{moresize}
+
+\usepackage[backend=biber,style=authoryear]{biblatex} % Choose your style
+\addbibresource{references.bib} % Use the name of your .bib file
+    
+
+\definecolor{codegray}{gray}{0.9}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\lstdefinestyle{mypython}{
+    backgroundcolor=\color{codegray},   
+    commentstyle=\color{deepgreen},
+    keywordstyle=\color{deepblue},
+    numberstyle=\tiny\color{gray},
+    stringstyle=\color{deepred},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4,
+    language=Python
+}
+
+
+% Custom author info
+\pagenumbering{gobble}
+\title{
+    \textbf{\small COMS4047A}\\[0.5em]
+    \textbf{Reinforcement Learning}\\[1em]
+    {\Huge \textbf{Assignment}}\\[3cm]
+    \includegraphics[width=0.4\textwidth]{download.png}
+}
+
+\author{
+    \small
+    \begin{tabular}{l}
+    \textbf{Taboka Chloe Dube - 2602515} \\
+    \textbf{Wendy Maboa - 2541693} \\
+    \textbf{Liam Brady - 2596852} \\
+    \textbf{Refiloe Mopeloa - 2333776}
+    \end{tabular}
+}
+
+\begin{document}
+
+\begin{titlepage}  % <- ensures it's treated as a full separate page
+    \maketitle
+\end{titlepage}
+
+
+\newpage
+
+\pagenumbering{arabic} 
+\setcounter{page}{1}
+\section*{Introduction}
+Crafter is a procedurally generated 2D survival game designed as a benchmark for reinforcement learning
+ research. It features a diverse set of tasks including resource gathering, tool crafting, creature combat, and
+ achievement hunting, all while managing survival mechanics like hunger and health. This report will provide an overview of implementation of agents in Crafter using DQN and PPO algorithms.
+
+\section*{In-class Algorithm: DQN}
+
+\section*{Out-of-class Algorithm: PPO}
+
+PPO (Proximal Policy Optimization) is a reinforcement learning algorithm that trains an agent by optimizing its decision-making policy. It works by collecting data through interactions with an environment and then using a clipped objective function to make stable updates to the policy. This approach is known for being more stable, efficient, and easier to implement than some other policy gradient methods \parencite{schulman}.
+
+\subsection*{Motivation}
+PPO (Proximal Policy Optimization) is a good choice for the Crafter environment because it provides a strong balance of stability, sample efficiency, and simplicity while effectively handling the environment's key challenges, such as sparse rewards, long-term reasoning, and procedural generation. 
+
+In addition these are the following theoretical benefits of PPO:
+\begin{itemize}
+    \item \textbf{Stable Policy Updates:} The Crafter environment is complex and dynamic, where large, unconstrained policy updates could easily destabilize training and cause the agent to forget beneficial behaviors. PPO's clipping mechanism limits how much the policy can change at each step, ensuring stable and controlled learning.
+    \item \textbf{Sample Efficiency:} Crafter involves many different achievements and complex interactions, meaning efficient use of experience is crucial. PPO is relatively sample-efficient because it can reuse collected data over multiple training epochs (mini-batches) without significant instability, unlike other on-policy methods that only use data once.
+    \item \textbf{Facilitates Exploration:} The PPO objective often includes an entropy bonus term, which encourages the agent to explore different actions and strategies. This is vital in Crafter, which features wide, procedurally generated worlds and independent achievements that require broad exploration to discover all possibilities.
+\end{itemize}
+
+\subsection*{Baseline Implementation}
+\subsection*{Improvement 1: Random Network Distillation}
+\subsection*{Improvement 2: Long-Short Term Memory}
+
+
+
+
+
+\end{document}
