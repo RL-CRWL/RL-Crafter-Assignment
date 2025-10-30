@@ -120,7 +120,7 @@ To address these issues, a Recurrent PPO (R-PPO) architecture was introduced. Th
 \subsection*{Improvement 2: Long-Short Term Memory}
 
 \subsubsection*{Improvement 2 Implementation}
-To address the baseline limitations in memory and exploration, we implemented a \textbf{Recurrent Proximal Policy Optimization (Recurrent PPO)} agent. This model extends PPO by incorporating a Long Short-Term Memory (LSTM) layer, enabling the policy to retain temporal context across time steps. This memory mechanism helps the agent handle the partially observable nature of the Crafter environment, where important state information may not be visible in a single frame.
+To address the baseline and improvement 1 limitations in memory and exploration, we implemented a \textbf{Recurrent Proximal Policy Optimization (Recurrent PPO)} agent. This model extends PPO by incorporating a Long Short-Term Memory (LSTM) layer, enabling the policy to retain temporal context across time steps. This memory mechanism helps the agent handle the partially observable nature of the Crafter environment, where important state information may not be visible in a single frame.
 The hyperparameters were kept the same as the baseline to make sure that the LSTM implementation would show a decent improvement in comparison to the baeline.
 
 Additonally, slight reward shaping was employed to accelerate convergence and guide exploration towards useful sub-goals. This ensured that intermediate achievements (such as crafting tools or collecting resources) contributed meaningful gradient signals during training.
