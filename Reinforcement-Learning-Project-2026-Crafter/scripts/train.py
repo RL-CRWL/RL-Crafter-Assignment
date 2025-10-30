@@ -52,35 +52,32 @@ except ImportError as e:
 
 
 def create_agent(config):
-    """
-    Create appropriate agent based on config
-    
-    Args:
-        config: Configuration dictionary
-    
-    Returns:
-        Agent instance
-    """
+    """Create appropriate agent based on config"""
     config_name = config['name'].lower()
     
-    # Determine which agent to create based on config name
-    if 'improvement2' in config_name or config.get('reward_shaping') in ['strategic', 'conservative']:
+    # Determine which agent to create
+    if 'improvement2' in config_name or config.get('use_frame_stacking', False):
         if not HAS_IMPROVEMENT2:
-            raise ImportError("❌ DQN_improv2.py not found! Please add it to src/agents/")
+            raise ImportError("❌ DQN_improv2.py not found!")
         
-        print("🚀 Creating DQN Improvement 2 (Conservative) agent...")
-        return DQNImprovement2Conservative(
+        print("🎬 Creating DQN Improvement 2 (Frame Stacking) agent...")
+        
+        # Import the frame stacking agent
+        from src.agents.DQN_improv2 import DQNImprovement2FrameStack
+        
+        return DQNImprovement2FrameStack(
             learning_rate=config['learning_rate'],
             buffer_size=config['buffer_size'],
             learning_starts=config['learning_starts'],
             batch_size=config['batch_size'],
             gamma=config['gamma'],
-            target_update_interval=config.get('target_update_interval', 5000),
+            target_update_interval=config.get('target_update_interval', 10000),
             exploration_fraction=config['exploration_fraction'],
             exploration_initial_eps=config['exploration_initial_eps'],
             exploration_final_eps=config['exploration_final_eps'],
             train_freq=config.get('train_freq', 4),
             gradient_steps=config.get('gradient_steps', 1),
+            n_stack=config.get('n_stack', 4),
             device=config['device'],
             seed=config['seed']
         )

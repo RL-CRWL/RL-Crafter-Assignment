@@ -1,18 +1,20 @@
 """
-DQN Improvement 2 FINAL FIX: Curriculum Learning
+DQN Improvement 2: Frame Stacking for Temporal Context
 
 PREVIOUS PROBLEM:
-Reward shaping (even conservative) caused training/eval mismatch
-Result: 1.66 reward (worse than baseline's 3.42)
+- Curriculum learning approaches (extended exploration) consistently underperform
+- Both 30% and 20% exploration led to worse results than Improvement 1
 
-NEW APPROACH - CURRICULUM LEARNING:
-Instead of reward shaping, use curriculum learning:
-1. Start with easier exploration (higher epsilon for longer)
-2. Prioritized experience replay (sample important transitions more)
-3. Better CNN architecture (same as Improv1)
-4. NO reward shaping during training OR evaluation
+NEW APPROACH - FRAME STACKING:
+Why this should work:
+1. Single frames lack temporal information (can't see movement/velocity)
+2. Stacking 4 frames gives agent context about entity motion
+3. Helps agent predict: "Is that zombie moving toward me?"
+4. Should improve survival and achievement success rates
 
-This maintains consistency while encouraging exploration!
+This is a DIFFERENT type of improvement - architectural rather than training-focused
+
+Based on proven CNN from Improvement 1 + frame stacking
 """
 
 import os
@@ -23,6 +25,7 @@ import torch.nn as nn
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
@@ -30,17 +33,22 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.wrappers import make_crafter_env
 
 
-class SimplifiedImprovedCNN(BaseFeaturesExtractor):
+class FrameStackCNN(BaseFeaturesExtractor):
     """
-    Same CNN as Improvement 1 (proven to work!)
+    CNN designed for frame-stacked observations (4 frames × 3 channels = 12 input channels)
+    
+    Same architecture as Improvement 1, but handles 12 input channels instead of 3
     """
     
     def __init__(self, observation_space, features_dim=256):
         super().__init__(observation_space, features_dim)
         
-        n_input_channels = observation_space.shape[0]
+        n_input_channels = observation_space.shape[0]  # Should be 12 (4 frames × 3 RGB)
+        
+        print(f"  📺 Frame-stacked CNN: {n_input_channels} input channels (4 frames × 3 RGB)")
         
         self.cnn = nn.Sequential(
+            # Same structure as Improvement 1, just more input channels
             nn.Conv2d(n_input_channels, 48, kernel_size=8, stride=4, padding=0),
             nn.ReLU(),
             nn.Conv2d(48, 96, kernel_size=4, stride=2, padding=0),
@@ -50,6 +58,7 @@ class SimplifiedImprovedCNN(BaseFeaturesExtractor):
             nn.Flatten(),
         )
         
+        # Calculate flatten size
         with torch.no_grad():
             n_flatten = self.cnn(
                 torch.as_tensor(observation_space.sample()[None]).float()
@@ -60,6 +69,7 @@ class SimplifiedImprovedCNN(BaseFeaturesExtractor):
             nn.ReLU(),
         )
         
+        # Better initialization
         self.apply(self._init_weights)
     
     def _init_weights(self, module):
@@ -72,8 +82,8 @@ class SimplifiedImprovedCNN(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 
-class CurriculumMetricsCallback(BaseCallback):
-    """Enhanced callback with curriculum tracking"""
+class FrameStackMetricsCallback(BaseCallback):
+    """Metrics callback with frame stacking awareness"""
     
     def __init__(self, eval_env, eval_freq=10000, verbose=1):
         super().__init__(verbose)
@@ -85,6 +95,7 @@ class CurriculumMetricsCallback(BaseCallback):
         self.eval_rewards = []
         self.eval_lengths = []
         self.achievements_unlocked = []
+        self.geometric_means = []
         self.best_eval_reward = -np.inf
         
     def _on_step(self) -> bool:
@@ -95,11 +106,12 @@ class CurriculumMetricsCallback(BaseCallback):
                     self.episode_lengths.append(info['l'])
         
         if self.n_calls % self.eval_freq == 0:
-            metrics = self.evaluate_agent()
+            metrics = self.evaluate_agent(n_episodes=10)
             
             self.eval_rewards.append(metrics['mean_reward'])
             self.eval_lengths.append(metrics['mean_length'])
             self.achievements_unlocked.append(metrics['unique_achievements'])
+            self.geometric_means.append(metrics['geometric_mean'])
             
             if metrics['mean_reward'] > self.best_eval_reward:
                 self.best_eval_reward = metrics['mean_reward']
@@ -110,18 +122,20 @@ class CurriculumMetricsCallback(BaseCallback):
                 print(f"  Reward:       {metrics['mean_reward']:.2f} ± {metrics['std_reward']:.2f}")
                 print(f"  Survival:     {metrics['mean_length']:.1f} steps")
                 print(f"  Achievements: {metrics['unique_achievements']}/22")
+                print(f"  Geom Mean:    {metrics['geometric_mean']:.1f}%")
                 print(f"  Best:         {self.best_eval_reward:.2f}")
                 print(f"{'='*60}\n")
         
         return True
     
-    def evaluate_agent(self, n_episodes=5):
+    def evaluate_agent(self, n_episodes=10):
         rewards = []
         lengths = []
         all_achievements = defaultdict(int)
+        achievement_rates = defaultdict(int)
         
         for ep in range(n_episodes):
-            obs, info = self.eval_env.reset()
+            obs = self.eval_env.reset()
             done = False
             episode_reward = 0
             episode_length = 0
@@ -129,13 +143,16 @@ class CurriculumMetricsCallback(BaseCallback):
             
             while not done:
                 action, _ = self.model.predict(obs, deterministic=True)
-                obs, reward, terminated, truncated, info = self.eval_env.step(action)
-                done = terminated or truncated
-                episode_reward += reward
+                obs, reward, done, info = self.eval_env.step(action)
+                
+                episode_reward += reward[0] if isinstance(reward, np.ndarray) else reward
                 episode_length += 1
                 
-                if 'achievements' in info:
-                    for achievement, unlocked in info['achievements'].items():
+                # Handle vectorized info
+                actual_info = info[0] if isinstance(info, list) else info
+                
+                if 'achievements' in actual_info:
+                    for achievement, unlocked in actual_info['achievements'].items():
                         if unlocked:
                             episode_achievements.add(achievement)
             
@@ -145,64 +162,86 @@ class CurriculumMetricsCallback(BaseCallback):
             for ach in episode_achievements:
                 all_achievements[ach] += 1
         
+        # Calculate geometric mean
+        for ach, count in all_achievements.items():
+            achievement_rates[ach] = count / n_episodes
+        
+        if achievement_rates:
+            geometric_mean = np.exp(np.mean(np.log([rate + 1e-10 for rate in achievement_rates.values()]))) * 100
+        else:
+            geometric_mean = 0.0
+        
         return {
             'mean_reward': np.mean(rewards),
             'std_reward': np.std(rewards),
             'mean_length': np.mean(lengths),
             'std_length': np.std(lengths),
-            'unique_achievements': len(all_achievements)
+            'unique_achievements': len(all_achievements),
+            'geometric_mean': geometric_mean
         }
 
 
-class DQNImprovement2Conservative:
+class DQNImprovement2FrameStack:
     """
-    DQN Improvement 2 FINAL: Curriculum Learning
+    DQN Improvement 2: Frame Stacking
     
-    Key differences from Improvement 1:
-    1. Extended exploration (30% vs 10%)
-    2. Lower final epsilon (0.01 vs 0.05) - more exploitation once learned
-    3. Larger replay buffer (100k vs 75k)
-    4. Same proven CNN architecture
-    5. NO reward shaping (keeps training/eval consistent)
+    Key improvement: Stack 4 frames to provide temporal context
+    
+    Benefits:
+    - Agent can see motion/velocity of entities
+    - Better prediction of threats (zombies, skeletons)
+    - Improved decision making for combat and exploration
+    
+    All other hyperparameters SAME as Improvement 1 (the working one!)
     """
     
     def __init__(self,
                  learning_rate=1e-4,
-                 buffer_size=100000,        # LARGER buffer
-                 learning_starts=10000,
+                 buffer_size=75000,         # SAME as Improvement 1
+                 learning_starts=10000,     # SAME as Improvement 1
                  batch_size=32,
                  gamma=0.99,
                  target_update_interval=10000,
-                 exploration_fraction=0.2,  # EXTENDED exploration
+                 exploration_fraction=0.1,  # SAME as Improvement 1
                  exploration_initial_eps=1.0,
-                 exploration_final_eps=0.02,  # LOWER final epsilon
+                 exploration_final_eps=0.05, # SAME as Improvement 1
                  train_freq=4,
                  gradient_steps=1,
+                 n_stack=4,                 # NEW: Stack 4 frames
                  device='auto',
                  seed=42):
         
         self.seed = seed
+        self.n_stack = n_stack
         
-        print("\n🔧 Creating environments...")
-        print("  * Observation normalization: ON")
-        print("  * Reward shaping: OFF (for consistency)")
-        print("  * Curriculum: Extended exploration")
+        print("\n🔧 Creating frame-stacked environment...")
+        print(f"  * Frame stacking: {n_stack} frames")
+        print(f"  * Observation normalization: ON")
+        print(f"  * Input channels: {n_stack * 3} (was 3)")
         
-        # NO reward shaping - consistent training and evaluation
-        self.train_env = make_crafter_env(
-            seed=seed,
-            preprocess_type='normalize'
-        )
+        # Create base environment
+        def make_env():
+            env = make_crafter_env(
+                seed=seed,
+                preprocess_type='normalize'
+            )
+            return env
         
-        self.eval_env = make_crafter_env(
-            seed=seed + 100,
-            preprocess_type='normalize'
-        )
+        # Wrap in DummyVecEnv for frame stacking
+        self.train_env = DummyVecEnv([make_env])
+        self.train_env = VecFrameStack(self.train_env, n_stack=n_stack)
         
-        self.train_env.reset(seed=seed)
-        self.eval_env.reset(seed=seed + 100)
+        # Eval environment
+        def make_eval_env():
+            env = make_crafter_env(
+                seed=seed + 100,
+                preprocess_type='normalize'
+            )
+            return env
         
-        # Device
+        self.eval_env = DummyVecEnv([make_eval_env])
+        self.eval_env = VecFrameStack(self.eval_env, n_stack=n_stack)
+        
         self.device = device
         if device == 'auto':
             self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -221,18 +260,19 @@ class DQNImprovement2Conservative:
             'exploration_final_eps': exploration_final_eps,
             'train_freq': train_freq,
             'gradient_steps': gradient_steps,
+            'n_stack': n_stack,
         }
         
+        # Use frame-stack aware CNN
         policy_kwargs = dict(
-            features_extractor_class=SimplifiedImprovedCNN,
+            features_extractor_class=FrameStackCNN,
             features_extractor_kwargs=dict(features_dim=256),
         )
         
-        print("\n🏗️ Building DQN with curriculum learning...")
-        print("  * Same proven CNN as Improvement 1")
-        print("  * Extended exploration (30% of training)")
-        print("  * Larger buffer (100k experiences)")
-        print("  * Lower final epsilon (0.01)")
+        print("\n🏗️ Building DQN with frame stacking...")
+        print("  * SAME hyperparameters as Improvement 1 (proven to work!)")
+        print("  * ONLY change: 4-frame stacking for temporal awareness")
+        print("  * Expected: Better combat/exploration decisions")
         
         self.model = DQN(
             'CnnPolicy',
@@ -257,39 +297,39 @@ class DQNImprovement2Conservative:
         self.metrics_callback = None
     
     def train(self, total_timesteps=500000, eval_freq=10000,
-              save_dir='results/dqn_improvement2_conservative'):
+              save_dir='results/dqn_improvement2_framestack'):
         
         os.makedirs(save_dir, exist_ok=True)
         
-        self.metrics_callback = CurriculumMetricsCallback(
+        self.metrics_callback = FrameStackMetricsCallback(
             eval_env=self.eval_env,
             eval_freq=eval_freq,
             verbose=1
         )
         
         print("\n" + "="*70)
-        print("STARTING DQN IMPROVEMENT 2 (CURRICULUM LEARNING) TRAINING")
+        print("STARTING DQN IMPROVEMENT 2 (FRAME STACKING) TRAINING")
         print("="*70)
-        print("\n🎯 Goal: Beat Improvement 1 through better exploration")
-        print("\n📋 Key Improvements over Improvement 1:")
-        print("  1. Extended exploration (30% vs 10%)")
-        print("  2. Larger replay buffer (100k vs 75k)")
-        print("  3. Lower final epsilon (0.01 vs 0.05)")
-        print("  4. NO reward shaping (consistent training/eval)")
+        print("\n🎯 Goal: Add temporal awareness through frame stacking")
+        print("\n📋 Key Change from Improvement 1:")
+        print("  1. Frame stacking: 4 frames (provides motion/velocity info)")
+        print("  2. Everything else IDENTICAL to Improvement 1")
+        print("\n🧠 Why this should work:")
+        print("  • Agent can see entity movement (zombies approaching)")
+        print("  • Better combat decisions (when to fight/flee)")
+        print("  • Improved exploration (track where you came from)")
         
         print(f"\n⚙️ Hyperparameters:")
         for key, value in self.hyperparameters.items():
             print(f"  {key:25s}: {value}")
         print("="*70 + "\n")
         
-        # Train
         self.model.learn(
             total_timesteps=total_timesteps,
             callback=self.metrics_callback,
             log_interval=100
         )
         
-        # Save
         model_path = os.path.join(save_dir, 'model.zip')
         self.model.save(model_path)
         print(f"\n💾 Model saved to {model_path}")
@@ -303,7 +343,7 @@ class DQNImprovement2Conservative:
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        fig.suptitle('DQN Improvement 2 (Curriculum Learning) - Training Progress',
+        fig.suptitle('DQN Improvement 2 (Frame Stacking) - Training Progress',
                     fontsize=16, fontweight='bold')
         
         # Training rewards
@@ -315,10 +355,10 @@ class DQNImprovement2Conservative:
                 ma = np.convolve(self.metrics_callback.episode_rewards,
                                np.ones(window)/window, mode='valid')
                 ax.plot(ma, linewidth=2, color='red', label=f'{window}-ep MA')
-            ax.axhline(y=3.42, color='green', linestyle='--', linewidth=2,
-                      label='Baseline (3.42)')
-            ax.axhline(y=4.28, color='orange', linestyle='--', linewidth=2,
-                      label='Improv1 (4.28)')
+            ax.axhline(y=3.26, color='green', linestyle='--', linewidth=2,
+                      label='Baseline (3.26)')
+            ax.axhline(y=4.40, color='orange', linestyle='--', linewidth=2,
+                      label='Improv1 (4.40)')
             ax.set_xlabel('Episode')
             ax.set_ylabel('Reward')
             ax.set_title('Training Rewards')
@@ -332,10 +372,10 @@ class DQNImprovement2Conservative:
                     self.metrics_callback.eval_freq
             ax.plot(steps, self.metrics_callback.eval_rewards, marker='o',
                    linewidth=2, markersize=6)
-            ax.axhline(y=3.42, color='green', linestyle='--', linewidth=2,
-                      label='Baseline (3.42)')
-            ax.axhline(y=4.28, color='orange', linestyle='--', linewidth=2,
-                      label='Improv1 (4.28)')
+            ax.axhline(y=3.26, color='green', linestyle='--', linewidth=2,
+                      label='Baseline (3.26)')
+            ax.axhline(y=4.40, color='orange', linestyle='--', linewidth=2,
+                      label='Improv1 (4.40)')
             ax.set_xlabel('Training Steps')
             ax.set_ylabel('Mean Evaluation Reward')
             ax.set_title('Evaluation Performance')
@@ -349,30 +389,30 @@ class DQNImprovement2Conservative:
                     self.metrics_callback.eval_freq
             ax.plot(steps, self.metrics_callback.eval_lengths, marker='s',
                    linewidth=2, color='orange', markersize=6)
-            ax.axhline(y=175.5, color='green', linestyle='--', linewidth=2,
-                      label='Baseline (175.5)')
-            ax.axhline(y=189.6, color='orange', linestyle='--', linewidth=2,
-                      label='Improv1 (189.6)')
+            ax.axhline(y=177.7, color='green', linestyle='--', linewidth=2,
+                      label='Baseline (177.7)')
+            ax.axhline(y=193.5, color='orange', linestyle='--', linewidth=2,
+                      label='Improv1 (193.5)')
             ax.set_xlabel('Training Steps')
             ax.set_ylabel('Mean Survival Time')
             ax.set_title('Survival Progress')
             ax.legend()
             ax.grid(True, alpha=0.3)
         
-        # Achievements
+        # Geometric mean
         ax = axes[1, 1]
-        if len(self.metrics_callback.achievements_unlocked) > 0:
-            steps = np.arange(len(self.metrics_callback.achievements_unlocked)) * \
+        if len(self.metrics_callback.geometric_means) > 0:
+            steps = np.arange(len(self.metrics_callback.geometric_means)) * \
                     self.metrics_callback.eval_freq
-            ax.plot(steps, self.metrics_callback.achievements_unlocked, marker='^',
-                   linewidth=2, color='green', markersize=6)
-            ax.axhline(y=22, color='red', linestyle='--', linewidth=2,
-                      label='Total (22)')
-            ax.axhline(y=9, color='orange', linestyle='--', linewidth=2,
-                      label='Improv1 (9)')
+            ax.plot(steps, self.metrics_callback.geometric_means, marker='^',
+                   linewidth=2, color='purple', markersize=6)
+            ax.axhline(y=21.79, color='green', linestyle='--', linewidth=2,
+                      label='Baseline (21.79%)')
+            ax.axhline(y=34.61, color='orange', linestyle='--', linewidth=2,
+                      label='Improv1 (34.61%)')
             ax.set_xlabel('Training Steps')
-            ax.set_ylabel('Unique Achievements')
-            ax.set_title('Achievement Progress')
+            ax.set_ylabel('Geometric Mean (%)')
+            ax.set_title('Achievement Performance')
             ax.legend()
             ax.grid(True, alpha=0.3)
         
@@ -383,9 +423,9 @@ class DQNImprovement2Conservative:
         
         print(f"📈 Training plots saved")
     
-    def evaluate(self, n_episodes=10):
+    def evaluate(self, n_episodes=50):
         print(f"\n{'='*70}")
-        print(f"EVALUATING DQN IMPROVEMENT 2 (CURRICULUM LEARNING)")
+        print(f"EVALUATING DQN IMPROVEMENT 2 (FRAME STACKING)")
         print(f"{'='*70}\n")
         
         episode_rewards = []
@@ -393,7 +433,7 @@ class DQNImprovement2Conservative:
         all_achievements = defaultdict(int)
         
         for episode in range(n_episodes):
-            obs, info = self.eval_env.reset()
+            obs = self.eval_env.reset()
             done = False
             episode_reward = 0
             episode_length = 0
@@ -401,13 +441,16 @@ class DQNImprovement2Conservative:
             
             while not done:
                 action, _ = self.model.predict(obs, deterministic=True)
-                obs, reward, terminated, truncated, info = self.eval_env.step(action)
-                done = terminated or truncated
-                episode_reward += reward
+                obs, reward, done, info = self.eval_env.step(action)
+                
+                episode_reward += reward[0] if isinstance(reward, np.ndarray) else reward
                 episode_length += 1
                 
-                if 'achievements' in info:
-                    for achievement, unlocked in info['achievements'].items():
+                # Handle vectorized info
+                actual_info = info[0] if isinstance(info, list) else info
+                
+                if 'achievements' in actual_info:
+                    for achievement, unlocked in actual_info['achievements'].items():
                         if unlocked:
                             episode_achievements.add(achievement)
             
@@ -417,25 +460,34 @@ class DQNImprovement2Conservative:
             for ach in episode_achievements:
                 all_achievements[ach] += 1
             
-            print(f"Episode {episode+1:2d}/{n_episodes}: "
-                  f"Reward={episode_reward:.1f}, Length={episode_length:3d}, "
-                  f"Achievements={len(episode_achievements)}")
+            if (episode + 1) % 10 == 0:
+                print(f"Progress: {episode+1}/{n_episodes} | "
+                      f"Avg Reward: {np.mean(episode_rewards):.2f} | "
+                      f"Avg Length: {np.mean(episode_lengths):.1f}")
+        
+        # Calculate geometric mean
+        achievement_rates = {ach: count / n_episodes for ach, count in all_achievements.items()}
+        if achievement_rates:
+            geometric_mean = np.exp(np.mean(np.log([rate + 1e-10 for rate in achievement_rates.values()]))) * 100
+        else:
+            geometric_mean = 0.0
         
         metrics = {
             'mean_reward': np.mean(episode_rewards),
             'std_reward': np.std(episode_rewards),
             'mean_length': np.mean(episode_lengths),
             'std_length': np.std(episode_lengths),
-            'total_unique_achievements': len(all_achievements)
+            'total_unique_achievements': len(all_achievements),
+            'geometric_mean': geometric_mean
         }
         
         print("\n" + "="*70)
-        print("COMPARISON:")
+        print("FINAL COMPARISON:")
         print("="*70)
-        print(f"                            Reward    Survival    Achievements")
-        print(f"Baseline:                   3.42      175.5       9/22")
-        print(f"Improvement 1:              4.28      189.6       9/22")
-        print(f"Improvement 2 (Curriculum): {metrics['mean_reward']:.2f}      {metrics['mean_length']:.1f}       {metrics['total_unique_achievements']}/22")
+        print(f"                              Reward    Survival    Achievements")
+        print(f"Baseline:                     3.26      177.7       9/22")
+        print(f"Improvement 1:                4.40      193.5       9/22")
+        print(f"Improvement 2 (FrameStack):   {metrics['mean_reward']:.2f}      {metrics['mean_length']:.1f}       {metrics['total_unique_achievements']}/22")
         print("="*70 + "\n")
         
         return metrics
@@ -446,9 +498,9 @@ class DQNImprovement2Conservative:
 
 
 def main():
-    agent = DQNImprovement2Conservative(seed=42)
+    agent = DQNImprovement2FrameStack(seed=42)
     agent.train(total_timesteps=500000, eval_freq=10000)
-    agent.evaluate(n_episodes=10)
+    agent.evaluate(n_episodes=50)
 
 
 if __name__ == "__main__":
