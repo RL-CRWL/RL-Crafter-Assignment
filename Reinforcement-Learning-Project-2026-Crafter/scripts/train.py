@@ -3,7 +3,7 @@ FIXED Training script for all DQN agents
 
 Usage:
     python train.py --config DQN_CONFIG              # Baseline
-    python train.py --config DQN_IMPROVEMENT_1       # Fixed Improvement 1
+    python train.py --config DQN_IMPROVEMENT_1       # Improvement 1
     python train.py --config DQN_IMPROVEMENT_2       # Improvement 2
     python train.py --config QUICK_TEST_CONFIG       # Quick test
 """
@@ -14,6 +14,7 @@ import sys
 import torch
 import json
 from datetime import datetime
+import numpy as np 
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,19 +34,20 @@ except ImportError as e:
     HAS_BASELINE = False
 
 try:
-    from src.agents.DQN_improv1_FIXED import DQNImprovement1Fixed
-    print("  ✓ DQNImprovement1Fixed")
+    # FIXED: Import from DQN_improv1.py (the file that actually exists)
+    from src.agents.DQN_improv1 import DQNImprovement1Simplified
+    print("  ✓ DQNImprovement1Simplified")
     HAS_IMPROVEMENT1 = True
 except ImportError as e:
-    print(f"  ✗ DQNImprovement1Fixed failed: {e}")
+    print(f"  ✗ DQNImprovement1Simplified failed: {e}")
     HAS_IMPROVEMENT1 = False
 
 try:
-    from src.agents.DQN_improv2 import DQNImprovement2
-    print("  ✓ DQNImprovement2")
+    from src.agents.DQN_improv2 import DQNImprovement2Conservative
+    print("  ✓ DQNImprovement2Conservative")
     HAS_IMPROVEMENT2 = True
 except ImportError as e:
-    print(f"  ✗ DQNImprovement2 not found (add it to src/agents/ when ready)")
+    print(f"  ✗ DQNImprovement2Conservative failed: {e}")
     HAS_IMPROVEMENT2 = False
 
 
@@ -62,12 +64,12 @@ def create_agent(config):
     config_name = config['name'].lower()
     
     # Determine which agent to create based on config name
-    if 'improvement2' in config_name or config.get('reward_shaping') == 'strategic':
+    if 'improvement2' in config_name or config.get('reward_shaping') in ['strategic', 'conservative']:
         if not HAS_IMPROVEMENT2:
             raise ImportError("❌ DQN_improv2.py not found! Please add it to src/agents/")
         
-        print("🚀 Creating DQN Improvement 2 agent...")
-        return DQNImprovement2(
+        print("🚀 Creating DQN Improvement 2 (Conservative) agent...")
+        return DQNImprovement2Conservative(
             learning_rate=config['learning_rate'],
             buffer_size=config['buffer_size'],
             learning_starts=config['learning_starts'],
@@ -85,10 +87,10 @@ def create_agent(config):
     
     elif 'improvement1' in config_name or config.get('use_custom_cnn', False):
         if not HAS_IMPROVEMENT1:
-            raise ImportError("❌ DQN_improv1_FIXED.py not found! Please add it to src/agents/")
+            raise ImportError("❌ DQN_improv1.py not found! Please add it to src/agents/")
         
-        print("🔧 Creating DQN Improvement 1 (Fixed) agent...")
-        return DQNImprovement1Fixed(
+        print("🔧 Creating DQN Improvement 1 (Simplified) agent...")
+        return DQNImprovement1Simplified(
             learning_rate=config['learning_rate'],
             buffer_size=config['buffer_size'],
             learning_starts=config['learning_starts'],
@@ -173,7 +175,7 @@ Examples:
   # Train baseline
   python train.py --config DQN_CONFIG
   
-  # Train improvement 1 (fixed)
+  # Train improvement 1
   python train.py --config DQN_IMPROVEMENT_1
   
   # Train improvement 2
@@ -303,7 +305,7 @@ Examples:
         print("\nMake sure the agent file exists in src/agents/")
         print("Expected files:")
         print("  - src/agents/DQN_baseline.py")
-        print("  - src/agents/DQN_improv1_FIXED.py")
+        print("  - src/agents/DQN_improv1.py")
         print("  - src/agents/DQN_improv2.py")
         return
     except Exception as e:
