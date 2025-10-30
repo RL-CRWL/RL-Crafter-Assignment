@@ -14,7 +14,7 @@ PPO_Baseline: Reinforcement-Learning-Project-2026-Crafter/src/agents/PPO_baselin
 PPO_Improv1: Reinforcement-Learning-Project-2026-Crafter/src/agents/PPO_improv1.py
 	python $^
 
-Results: $(eval_src)
+Results: 
 	python $(eval_src) --model $(ppo_base) --n_episodes $(episodes) --save_dir $(ppo_base_save)
 	python $(eval_src) --model $(ppo_improv_1) --n_episodes $(episodes) --save_dir $(ppo_1_save)
 	python $(eval_src) --model $(ppo_improv_2) --n_episodes $(episodes) --save_dir $(ppo_2_save)
