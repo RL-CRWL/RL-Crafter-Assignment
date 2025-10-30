@@ -171,46 +171,15 @@ class RNDModule:
         return normalized_reward
 
 
-class RNDRewardWrapper(gym.Wrapper):
-    """Wrapper that adds RND intrinsic rewards to environment rewards"""
-    def __init__(self, env, rnd_module, intrinsic_coef=1.0):
-        super().__init__(env)
-        self.rnd_module = rnd_module
-        self.intrinsic_coef = intrinsic_coef
-        self.last_obs = None
-        
-    def reset(self, **kwargs):
-        obs, info = self.env.reset(**kwargs)
-        self.last_obs = obs
-        return obs, info
-    
-    def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        
-        # Compute intrinsic reward
-        intrinsic_reward = self.rnd_module.compute_intrinsic_reward(obs)
-        normalized_intrinsic = self.rnd_module.normalize_reward(intrinsic_reward)
-        
-        # Update RND predictor
-        self.rnd_module.update(np.expand_dims(obs, 0))
-        
-        # Combine rewards
-        total_reward = reward + self.intrinsic_coef * normalized_intrinsic[0]
-        
-        # Store intrinsic reward in info for logging
-        info['intrinsic_reward'] = normalized_intrinsic[0]
-        info['extrinsic_reward'] = reward
-        
-        self.last_obs = obs
-        return obs, total_reward, terminated, truncated, info
-
-
 class RNDCallback(BaseCallback):
     """Callback for RND training and evaluation"""
-    def __init__(self, eval_env, eval_freq=10000, csv_path=None, verbose=1):
+    def __init__(self, rnd_module, eval_env, eval_freq=10000, 
+                 intrinsic_reward_coef=1.0, csv_path=None, verbose=1):
         super().__init__(verbose)
+        self.rnd_module = rnd_module
         self.eval_env = eval_env
         self.eval_freq = eval_freq
+        self.intrinsic_reward_coef = intrinsic_reward_coef
         self.csv_path = csv_path
         
         # Metrics tracking
@@ -219,7 +188,7 @@ class RNDCallback(BaseCallback):
         self.eval_rewards = []
         self.eval_steps = []
         self.intrinsic_rewards = []
-        self.extrinsic_rewards = []
+        self.rnd_losses = []
         
         # Initialize CSV file
         if self.csv_path:
@@ -230,7 +199,37 @@ class RNDCallback(BaseCallback):
                                'min_reward', 'max_reward', 'mean_length', 'std_length'])
     
     def _on_step(self) -> bool:
-        # Collect intrinsic/extrinsic rewards from episode info
+        # Get current observations from rollout buffer
+        # Access the last observation from the buffer
+        try:
+            # Get observations from the current rollout
+            if hasattr(self.model, 'rollout_buffer') and self.model.rollout_buffer.pos > 0:
+                # Get the most recent observation
+                obs = self.model.rollout_buffer.observations[self.model.rollout_buffer.pos - 1]
+                
+                # Convert to numpy if needed
+                if isinstance(obs, torch.Tensor):
+                    obs = obs.cpu().numpy()
+                
+                # Ensure it's the right shape
+                if len(obs.shape) == 3:
+                    obs = np.expand_dims(obs, 0)
+                
+                # Compute intrinsic reward
+                intrinsic_reward = self.rnd_module.compute_intrinsic_reward(obs)
+                normalized_intrinsic_reward = self.rnd_module.normalize_reward(intrinsic_reward)
+                
+                # Store intrinsic rewards
+                self.intrinsic_rewards.extend(normalized_intrinsic_reward)
+                
+                # Update RND predictor network
+                rnd_loss = self.rnd_module.update(obs)
+                self.rnd_losses.append(rnd_loss)
+        except Exception as e:
+            # Silently skip if we can't get observations
+            pass
+        
+        # Log training metrics
         if len(self.model.ep_info_buffer) > 0:
             for info in self.model.ep_info_buffer:
                 self.episode_rewards.append(info['r'])
@@ -247,6 +246,10 @@ class RNDCallback(BaseCallback):
                 print(f"Evaluation at step {self.n_calls}:")
                 print(f"  Mean Reward: {eval_metrics['mean_reward']:.2f} ± {eval_metrics['std_reward']:.2f}")
                 print(f"  Mean Length: {eval_metrics['mean_length']:.2f}")
+                if len(self.intrinsic_rewards) > 0:
+                    print(f"  Mean Intrinsic Reward: {np.mean(self.intrinsic_rewards[-1000:]):.4f}")
+                if len(self.rnd_losses) > 0:
+                    print(f"  Mean RND Loss: {np.mean(self.rnd_losses[-100:]):.4f}")
                 print(f"{'='*60}")
             
             # Save to CSV
@@ -334,13 +337,6 @@ class PPORNDAgent:
             learning_rate=rnd_learning_rate
         )
         
-        # Wrap training environment with RND rewards
-        self.train_env = RNDRewardWrapper(
-            self.train_env,
-            self.rnd_module,
-            intrinsic_coef=intrinsic_reward_coef
-        )
-        
         # PPO hyperparameters
         self.hyperparameters = {
             'learning_rate': learning_rate,
@@ -384,8 +380,10 @@ class PPORNDAgent:
         
         # Setup callback
         self.callback = RNDCallback(
+            rnd_module=self.rnd_module,
             eval_env=self.eval_env,
             eval_freq=eval_freq,
+            intrinsic_reward_coef=self.hyperparameters['intrinsic_reward_coef'],
             csv_path=csv_path,
             verbose=1
         )
@@ -483,24 +481,24 @@ class PPORNDAgent:
                        dpi=150, bbox_inches='tight')
             plt.close()
         
-        # Plot extrinsic rewards
-        if len(self.callback.extrinsic_rewards) > 0:
+        # Plot RND loss
+        if len(self.callback.rnd_losses) > 0:
             plt.figure(figsize=(10, 6))
-            plt.plot(self.callback.extrinsic_rewards, alpha=0.3)
-            window = 1000
-            if len(self.callback.extrinsic_rewards) >= window:
+            plt.plot(self.callback.rnd_losses, alpha=0.3)
+            window = 100
+            if len(self.callback.rnd_losses) >= window:
                 moving_avg = np.convolve(
-                    self.callback.extrinsic_rewards,
+                    self.callback.rnd_losses,
                     np.ones(window)/window,
                     mode='valid'
                 )
                 plt.plot(moving_avg, linewidth=2, label=f'{window}-step MA')
-            plt.xlabel('Step')
-            plt.ylabel('Extrinsic Reward')
-            plt.title('Environment Rewards (Extrinsic)')
+            plt.xlabel('Update Step')
+            plt.ylabel('RND Loss')
+            plt.title('RND Prediction Loss')
             plt.legend()
             plt.grid(True, alpha=0.3)
-            plt.savefig(os.path.join(save_dir, 'extrinsic_rewards.png'), 
+            plt.savefig(os.path.join(save_dir, 'rnd_loss.png'), 
                        dpi=150, bbox_inches='tight')
             plt.close()
     
@@ -574,7 +572,7 @@ def main():
     
     # Train
     agent.train(
-        total_timesteps=100_000,
+        total_timesteps=3_000_000,
         eval_freq=10000,
         save_dir='results/ppo_rnd'
     )
