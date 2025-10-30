@@ -14,6 +14,7 @@ import json
 import argparse
 from src.utils.wrappers import make_crafter_env
 from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 
 class MultiModelComparator:
@@ -21,7 +22,6 @@ class MultiModelComparator:
     
     def __init__(self, n_episodes=50):
         self.n_episodes = n_episodes
-        self.env = make_crafter_env()
         
         # Crafter achievements (22 total)
         self.achievements = [
@@ -37,6 +37,15 @@ class MultiModelComparator:
         # Store results for all models
         self.all_results = {}
         
+    def detect_frame_stacking(self, model):
+        """Detect if model was trained with frame stacking by checking observation space"""
+        obs_space = model.observation_space
+        if hasattr(obs_space, 'shape'):
+            # Check if width dimension suggests frame stacking (256 = 64 * 4)
+            if len(obs_space.shape) == 3 and obs_space.shape[2] == 256:
+                return True
+        return False
+    
     def evaluate_model(self, model, model_name):
         """Evaluate a single model"""
         
@@ -44,12 +53,36 @@ class MultiModelComparator:
         print(f"EVALUATING: {model_name}")
         print(f"{'='*70}")
         
+        # Detect if model uses frame stacking
+        use_frame_stacking = self.detect_frame_stacking(model)
+        
+        if use_frame_stacking:
+            print(f"  🎬 Detected frame stacking - using VecFrameStack environment")
+            # Create vectorized environment with frame stacking (matching training setup)
+            def make_env():
+                return make_crafter_env(preprocess_type='normalize')
+            
+            env = DummyVecEnv([make_env])
+            env = VecFrameStack(env, n_stack=4)
+        else:
+            print(f"  📺 Standard environment (no frame stacking)")
+            env = make_crafter_env()
+        
         episode_rewards = []
         episode_lengths = []
         achievement_unlocks = defaultdict(int)
         
+        # Determine if this is a vectorized environment
+        is_vec_env = use_frame_stacking
+        
         for episode in range(self.n_episodes):
-            obs, info = self.env.reset()
+            if is_vec_env:
+                # VecEnv API: obs = env.reset()
+                obs = env.reset()
+            else:
+                # Gym API: obs, info = env.reset()
+                obs, _ = env.reset()
+            
             done = False
             episode_reward = 0
             episode_length = 0
@@ -57,16 +90,36 @@ class MultiModelComparator:
             
             while not done:
                 action, _ = model.predict(obs, deterministic=True)
-                obs, reward, terminated, truncated, info = self.env.step(action)
                 
-                episode_reward += reward
-                episode_length += 1
-                done = terminated or truncated
+                if is_vec_env:
+                    # VecEnv API: obs, reward, done, info = env.step(action)
+                    obs, reward, done, info = env.step(action)
+                    
+                    # Extract from arrays
+                    if isinstance(reward, np.ndarray):
+                        reward = reward[0]
+                    if isinstance(done, np.ndarray):
+                        done = done[0]
+                    
+                    episode_reward += reward
+                    episode_length += 1
+                    
+                    # Handle vectorized info
+                    actual_info = info[0] if isinstance(info, list) else info
+                else:
+                    # Gym API: obs, reward, terminated, truncated, info = env.step(action)
+                    obs, reward, terminated, truncated, info = env.step(action)
+                    done = terminated or truncated
+                    
+                    episode_reward += reward
+                    episode_length += 1
+                    
+                    actual_info = info
                 
                 # Track achievements
-                if 'achievements' in info:
+                if 'achievements' in actual_info:
                     for achievement in self.achievements:
-                        if info['achievements'].get(achievement, False):
+                        if actual_info['achievements'].get(achievement, False):
                             episode_achievements.add(achievement)
             
             episode_rewards.append(episode_reward)
@@ -80,6 +133,9 @@ class MultiModelComparator:
                 print(f"  Progress: {episode+1}/{self.n_episodes} | "
                       f"Avg Reward: {np.mean(episode_rewards):.2f} | "
                       f"Avg Length: {np.mean(episode_lengths):.1f}")
+        
+        # Clean up environment
+        env.close()
         
         # Calculate metrics
         metrics = {

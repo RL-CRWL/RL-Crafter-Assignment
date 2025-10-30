@@ -173,9 +173,9 @@ class DQNImprovement2Conservative:
                  batch_size=32,
                  gamma=0.99,
                  target_update_interval=10000,
-                 exploration_fraction=0.3,  # EXTENDED exploration
+                 exploration_fraction=0.2,  # EXTENDED exploration
                  exploration_initial_eps=1.0,
-                 exploration_final_eps=0.01,  # LOWER final epsilon
+                 exploration_final_eps=0.02,  # LOWER final epsilon
                  train_freq=4,
                  gradient_steps=1,
                  device='auto',
