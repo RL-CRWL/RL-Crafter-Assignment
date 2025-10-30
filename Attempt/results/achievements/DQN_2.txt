@@ -1,0 +1,23 @@
+=== Average Achievements over 10 Episodes ===
+  collect_coal: 0.00
+  collect_diamond: 0.00
+  collect_drink: 0.00
+  collect_iron: 0.00
+  collect_sapling: 0.00
+  collect_stone: 0.40
+  collect_wood: 23.60
+  defeat_skeleton: 0.00
+  defeat_zombie: 0.00
+  eat_cow: 0.00
+  eat_plant: 0.00
+  make_iron_pickaxe: 0.00
+  make_iron_sword: 0.00
+  make_stone_pickaxe: 0.00
+  make_stone_sword: 0.00
+  make_wood_pickaxe: 1.40
+  make_wood_sword: 0.00
+  place_furnace: 0.00
+  place_plant: 0.00
+  place_stone: 0.20
+  place_table: 1.70
+  wake_up: 0.00

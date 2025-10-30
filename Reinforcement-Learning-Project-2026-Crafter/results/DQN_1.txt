@@ -1,0 +1,45 @@
+Running evaluation...
+Evaluating model over 10 episodes...
+Episode 1: Survival=233, Reward=3.1, Achievements=4
+  Achievements unlocked: ['collect_sapling', 'wake_up', 'collect_drink', 'place_plant']
+Episode 2: Survival=216, Reward=5.1, Achievements=6
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'wake_up', 'collect_drink']
+Episode 3: Survival=177, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'wake_up']
+Episode 4: Survival=263, Reward=5.1, Achievements=6
+  Achievements unlocked: ['eat_cow', 'collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'wake_up']
+Episode 5: Survival=171, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'collect_drink']
+Episode 6: Survival=219, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'defeat_zombie', 'place_plant', 'wake_up']
+Episode 7: Survival=226, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'collect_drink']
+Episode 8: Survival=170, Reward=3.1, Achievements=4
+  Achievements unlocked: ['collect_sapling', 'wake_up', 'collect_drink', 'place_plant']
+Episode 9: Survival=156, Reward=5.1, Achievements=6
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'wake_up', 'collect_drink']
+Episode 10: Survival=283, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_wood', 'collect_sapling', 'place_plant', 'place_table', 'collect_drink']
+
+============================================================
+EVALUATION RESULTS: DQN_1
+============================================================
+
+SURVIVAL TIME:
+  Average: 211.4 ± 40.2 steps
+
+CUMULATIVE REWARD:
+  Average: 4.2 ± 0.7
+
+ACHIEVEMENTS:
+  Geometric Mean of Unlock Rates: 0.4784
+  Unlock Rates (8 unique achievements):
+    collect_sapling: 100.0%
+    place_plant: 100.0%
+    collect_wood: 80.0%
+    wake_up: 70.0%
+    collect_drink: 70.0%
+    place_table: 70.0%
+    eat_cow: 10.0%
+    defeat_zombie: 10.0%
+============================================================
