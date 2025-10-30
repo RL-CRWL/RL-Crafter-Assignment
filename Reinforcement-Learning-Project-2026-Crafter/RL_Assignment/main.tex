@@ -93,7 +93,19 @@ In addition these are the following theoretical benefits of PPO:
 \subsection*{Baseline Implementation}
 The baseline agent was implemented using the Stable-Baselines3 PPO algorithm. The initial hyperparameters were chosen to provide stable learning without aggressive updates, ensuring reproducibility. The agent at this point perceives the environment through single still images (frames) rather than continuous sequences, meaning it has only a limited view of the environment at each step.
 \subsubsection*{Observations and Performance}
-The baseline PPO agent exhibited some exploratory behavior and moderate learning progress. However, its limited temporal awareness significantly constrained performance. The average episodic reward stabilized around \textbf{3.1}, with the maximum reward achieved being \textbf{5.1}.
+The baseline PPO agent exhibited some exploratory behavior and moderate learning progress. However, its limited temporal awareness significantly constrained performance. The average episodic reward stabilized around \textbf{3.26}, with the maximum reward achieved being \textbf{7.1}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_baseline.png}
+    \caption{Reward distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_baseline.png}
+    \caption{Survival distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
 \subsubsection*{Identified areas of improvement}
 The following weaknesses were identified in the baseline model:
 \begin{itemize}
