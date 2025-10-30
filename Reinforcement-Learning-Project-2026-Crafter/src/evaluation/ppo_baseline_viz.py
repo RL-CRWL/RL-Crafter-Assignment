@@ -1,12 +1,14 @@
 from stable_baselines3 import PPO
-from utils.wrappers import make_crafter_env
+
 import numpy as np
 import imageio
 import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.wrappers import make_crafter_env
 
+# === Load environment and model ===
 # === Load environment and model ===
 env = make_crafter_env()
 model_path = 'Reinforcement-Learning-Project-2026-Crafter/results/PPO/ppo_baseline'

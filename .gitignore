@@ -5,4 +5,5 @@
 .txt
 Miniconda3-latest-Linux-x86_64.sh
 __pycache__/
-cuda-keyring_1.1-1_all.deb
+evaluation_data.csv
+training_data.csv
