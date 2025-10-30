@@ -1,0 +1,45 @@
+Running evaluation...
+Evaluating model over 10 episodes...
+Episode 1: Survival=167, Reward=6.1, Achievements=7
+  Achievements unlocked: ['eat_cow', 'collect_sapling', 'place_table', 'defeat_zombie', 'wake_up', 'collect_wood', 'place_plant']
+Episode 2: Survival=138, Reward=3.1, Achievements=4
+  Achievements unlocked: ['collect_sapling', 'eat_cow', 'wake_up', 'collect_wood']
+Episode 3: Survival=203, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_sapling', 'place_table', 'defeat_zombie', 'collect_wood', 'place_plant']
+Episode 4: Survival=400, Reward=5.1, Achievements=6
+  Achievements unlocked: ['collect_sapling', 'place_table', 'collect_drink', 'wake_up', 'collect_wood', 'place_plant']
+Episode 5: Survival=213, Reward=6.1, Achievements=7
+  Achievements unlocked: ['eat_cow', 'collect_sapling', 'place_table', 'defeat_zombie', 'wake_up', 'collect_wood', 'place_plant']
+Episode 6: Survival=183, Reward=6.1, Achievements=7
+  Achievements unlocked: ['collect_sapling', 'place_table', 'defeat_zombie', 'collect_drink', 'wake_up', 'collect_wood', 'place_plant']
+Episode 7: Survival=210, Reward=7.1, Achievements=8
+  Achievements unlocked: ['eat_cow', 'collect_sapling', 'place_table', 'defeat_zombie', 'collect_drink', 'wake_up', 'collect_wood', 'place_plant']
+Episode 8: Survival=280, Reward=6.1, Achievements=7
+  Achievements unlocked: ['collect_sapling', 'place_table', 'defeat_zombie', 'collect_drink', 'wake_up', 'collect_wood', 'place_plant']
+Episode 9: Survival=201, Reward=5.1, Achievements=6
+  Achievements unlocked: ['collect_sapling', 'place_table', 'defeat_zombie', 'wake_up', 'collect_wood', 'place_plant']
+Episode 10: Survival=208, Reward=4.1, Achievements=5
+  Achievements unlocked: ['collect_sapling', 'defeat_zombie', 'wake_up', 'collect_wood', 'place_plant']
+
+============================================================
+EVALUATION RESULTS: DQN_2
+============================================================
+
+SURVIVAL TIME:
+  Average: 220.3 ± 69.2 steps
+
+CUMULATIVE REWARD:
+  Average: 5.3 ± 1.2
+
+ACHIEVEMENTS:
+  Geometric Mean of Unlock Rates: 0.7326
+  Unlock Rates (8 unique achievements):
+    collect_sapling: 100.0%
+    collect_wood: 100.0%
+    wake_up: 90.0%
+    place_plant: 90.0%
+    place_table: 80.0%
+    defeat_zombie: 80.0%
+    eat_cow: 40.0%
+    collect_drink: 40.0%
+============================================================

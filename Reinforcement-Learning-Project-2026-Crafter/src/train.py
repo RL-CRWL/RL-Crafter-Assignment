@@ -4,6 +4,8 @@ import argparse
 import crafter
 import os
 import json
+import torch 
+import numpy as np
 
 from shimmy import GymV21CompatibilityV0
 from stable_baselines3 import DQN
@@ -12,7 +14,8 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 
 from evaluate import evaluate_model, print_evaluation_results
-from networks import LSTMCNN
+from dueling import DuelingDQN
+
 
 # ========== ARGUMENTS ==========
 
@@ -63,11 +66,7 @@ eval_callback = EvalCallback(
 )
 
 # ========== MODEL ==========
-policy_kwargs = dict(
-    features_extractor_class=LSTMCNN,
-    features_extractor_kwargs=dict(features_dim=512),
-)
-model = DQN(
+model = DuelingDQN(
     "CnnPolicy",
     env,
     learning_rate=1e-4,
@@ -79,7 +78,6 @@ model = DQN(
     target_update_interval=2_500,
     exploration_fraction=0.2,
     exploration_final_eps=0.02,
-    policy_kwargs=policy_kwargs,
     verbose=1,
     tensorboard_log=os.path.join(logdir, "tensorboard/"),
 )
