@@ -19,8 +19,8 @@ dependencies:
   - ffmpeg
   - pip:
       - gymnasium==0.29.1
-      - crafter==1.8.0
-      - stable-baselines3==2.3.0
+      - crafter==1.7.1
+      - stable-baselines3==2.3.2
       - tensorboard
       - torch>=2.0
       - torchvision
@@ -29,3 +29,5 @@ dependencies:
       - moviepy
       - seaborn
       - scikit-learn
+      # added this as it is required for test_crafter.py to run on fifi's system
+      - ruamel.yaml==0.17.21

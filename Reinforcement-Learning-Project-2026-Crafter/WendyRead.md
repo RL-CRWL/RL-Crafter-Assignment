@@ -1,12 +1,17 @@
-conda create -n crafter_env python=3.10
+conda env create -f env1.yml 
 
 
 conda activate crafter_env
 
-
+for windows:
 python -m pip list | findstr crafter
 python -m pip list | findstr gymnasium
 python -m pip list | findstr stable-baselines3
+
+for linux:
+python -m pip list | grep crafter
+python -m pip list | grep gymnasium
+python -m pip list | grep stable_baselines3
 
 
 expected output:
