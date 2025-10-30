@@ -94,6 +94,7 @@ In addition these are the following theoretical benefits of PPO:
 The baseline agent was implemented using the Stable-Baselines3 PPO algorithm. The initial hyperparameters were chosen to provide stable learning without aggressive updates, ensuring reproducibility. The agent at this point perceives the environment through single still images (frames) rather than continuous sequences, meaning it has only a limited view of the environment at each step.
 \subsubsection*{Observations and Performance}
 The baseline PPO agent exhibited some exploratory behavior and moderate learning progress. However, its limited temporal awareness significantly constrained performance. The average episodic reward stabilized around \textbf{3.26}, with the maximum reward achieved being \textbf{7.1}.
+The following figures show the reward and survival distribution rates over 100 episodes:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_baseline.png}
@@ -118,6 +119,59 @@ To address these issues, a Recurrent PPO (R-PPO) architecture was introduced. Th
 \subsection*{Improvement 1: Random Network Distillation}
 \subsection*{Improvement 2: Long-Short Term Memory}
 
+\subsubsection*{Improvement 2 Implementation}
+To address the baseline limitations in memory and exploration, we implemented a \textbf{Recurrent Proximal Policy Optimization (Recurrent PPO)} agent. This model extends PPO by incorporating a Long Short-Term Memory (LSTM) layer, enabling the policy to retain temporal context across time steps. This memory mechanism helps the agent handle the partially observable nature of the Crafter environment, where important state information may not be visible in a single frame.
+The hyperparameters were kept the same as the baseline to make sure that the LSTM implementation would show a decent improvement in comparison to the baeline.
+
+Additonally, slight reward shaping was employed to accelerate convergence and guide exploration towards useful sub-goals. This ensured that intermediate achievements (such as crafting tools or collecting resources) contributed meaningful gradient signals during training.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{RewardShaping.png}
+    \caption{Reward Shaping implemented in RecurrentPPO agent}
+\end{figure}
+
+\subsubsection*{Observations and Performance}
+The introduction of temporal recurrence through an LSTM notably improved the agent's ability to integrate information across time steps. Compared to the baseline PPO model, which achieved a mean episodic reward of approximately 3.26 (maximum 7.1), the Recurrent PPO (R-PPO) demonstrated consistent performance gains.
+
+\subsubsection*{Qualitative Observations}
+
+Behaviorally, the Recurrent PPO agent demonstrated:
+\begin{itemize}
+    \item More coherent decision sequences across time, owing to the LSTM's memory retention.
+    \item Improved persistence in long-horizon tasks such as crafting and navigation.
+    \item Less tendency to repeat suboptimal exploration patterns seen in the baseline agent.
+\end{itemize}
+
+In addition, reward shaping contributed to smoother early learning and faster convergence during training, as the agent received structured feedback for intermediate achievements.
+
+\subsubsection*{Discussion}
+
+The performance gain from incorporating temporal memory validates the hypothesis that Crafter's partial observability penalizes stateless architectures. By maintaining a hidden state, the Recurrent PPO agent effectively constructs an implicit representation of unobserved parts of the environment. This allows for more context-aware actions and ultimately leads to higher cumulative rewards. 
+
+While the improvement is evident, the results also reveal that the agent has not fully stabilized—indicated by the wide reward range. Further tuning of learning rate, clipping threshold, and recurrent hidden size could reduce variance and enhance consistency across episodes.
+
+The following figures show the different reward and survival distribution rates over 100 episodes:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_improv2.png}
+    \caption{Reward distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_improv2.png}
+    \caption{Survival distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+
+An interesting observation from the experiments was that the Recurrent PPO (R-PPO) agent achieved a higher average reward (4.42) than the baseline PPO (3.26), despite exhibiting a lower overall survival rate. This contradiction can be explained by the agent's behavioral bias toward short-term, high-value actions.
+
+The inclusion of memory through the LSTM layer allowed the agent to recall and exploit previously observed opportunities, such as nearby resources or enemies, resulting in higher reward density per timestep. However, this same decisiveness increased exposure to risk, reducing overall survival time.
+
+Additionally, the use of reward shaping likely amplified this effect by reinforcing immediate sub-goal completion (e.g., crafting, combat) rather than conservative, long-term survival strategies. Consequently, the R-PPO learned to act more efficiently but less cautiously, prioritizing cumulative reward over lifespan duration.
+
+This highlights a fundamental reinforcement learning trade-off between \textit{reward maximization} and \textit{survival optimization}, emphasizing that longer episodes do not necessarily equate to better task performance.
 
 
 
