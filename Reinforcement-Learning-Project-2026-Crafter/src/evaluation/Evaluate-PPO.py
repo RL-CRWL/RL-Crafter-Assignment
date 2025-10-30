@@ -14,7 +14,7 @@ import json
 import argparse
 
 # Now import from src
-from src.utils.wrappers import make_crafter_env
+from src.utils.wrapper_ppo import make_crafter_env
 from stable_baselines3 import PPO
 
 

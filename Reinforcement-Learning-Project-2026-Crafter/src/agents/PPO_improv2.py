@@ -16,7 +16,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 # Local import for Crafter env
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.wrappers import make_crafter_env
+from utils.wrapper_ppo import make_crafter_env
 
 
 # ===========================

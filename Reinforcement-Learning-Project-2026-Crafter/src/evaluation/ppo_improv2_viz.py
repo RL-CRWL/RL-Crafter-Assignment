@@ -6,7 +6,7 @@ import imageio
 # ===== Imports =====
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agents.PPO_improv2 import AchievementTrackingWrapper
-from utils.wrappers import make_crafter_env
+from utils.wrapper_ppo import make_crafter_env
 
 # ===== Load environment =====
 base_env = make_crafter_env()

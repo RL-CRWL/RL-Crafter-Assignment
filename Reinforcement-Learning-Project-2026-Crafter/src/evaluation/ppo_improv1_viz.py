@@ -5,7 +5,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.wrappers import make_crafter_env
+from utils.wrapper_ppo import make_crafter_env
 
 # === Load environment and model ===
 env = make_crafter_env()

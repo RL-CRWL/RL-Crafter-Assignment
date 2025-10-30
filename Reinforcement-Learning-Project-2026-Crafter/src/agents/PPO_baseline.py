@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.wrappers import make_crafter_env
+from utils.wrapper_ppo import make_crafter_env
 
 class CrafterMetricsCallback(BaseCallback):
     """
