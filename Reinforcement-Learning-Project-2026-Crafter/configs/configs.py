@@ -97,7 +97,7 @@ DQN_IMPROVEMENT_2 = {
     
     # Memory settings - SAME as Improvement 1
     'batch_size': 32,
-    'buffer_size': 75000,          # SAME as Improv1
+    'buffer_size': 25000,          # SAME as Improv1
     'learning_starts': 10000,      # SAME as Improv1
     
     # Learning - SAME as Improvement 1

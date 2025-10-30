@@ -43,11 +43,11 @@ except ImportError as e:
     HAS_IMPROVEMENT1 = False
 
 try:
-    from src.agents.DQN_improv2 import DQNImprovement2Conservative
-    print("  ✓ DQNImprovement2Conservative")
+    from src.agents.DQN_FRAMESTACK import DQNImprovement2FrameStack
+    print("  ✓ DQNImprovement2FrameStack")
     HAS_IMPROVEMENT2 = True
 except ImportError as e:
-    print(f"  ✗ DQNImprovement2Conservative failed: {e}")
+    print(f"  ✗ DQNImprovement2FrameStack failed: {e}")
     HAS_IMPROVEMENT2 = False
 
 
@@ -63,7 +63,7 @@ def create_agent(config):
         print("🎬 Creating DQN Improvement 2 (Frame Stacking) agent...")
         
         # Import the frame stacking agent
-        from src.agents.DQN_improv2 import DQNImprovement2FrameStack
+        from src.agents.DQN_FRAMESTACK import DQNImprovement2FrameStack
         
         return DQNImprovement2FrameStack(
             learning_rate=config['learning_rate'],
