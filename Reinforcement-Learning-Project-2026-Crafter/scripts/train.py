@@ -50,13 +50,47 @@ except ImportError as e:
     print(f"  ✗ DQNImprovement2FrameStack failed: {e}")
     HAS_IMPROVEMENT2 = False
 
+try:
+    from src.agents.DQN_LSTM import DQNImprovement2DuelingFrameStack
+    print("  ✓ DQNImprovement3Duel")
+    HAS_IMPROVEMENT3 = True
+except ImportError as e:
+    print(f"  ✗ DQNImprovement3Duel failed: {e}")
+    HAS_IMPROVEMENT3 = False
+
 
 def create_agent(config):
     """Create appropriate agent based on config"""
     config_name = config['name'].lower()
     
+    if 'improvement3' in config_name:
+        if not HAS_IMPROVEMENT3:
+            raise ImportError("❌ DQN_improv2.py not found!")
+        
+        print("🎬 Creating DQN Improvement 2 (Frame Stacking) agent...")
+        
+        # Import the frame stacking agent
+        from src.agents.DQN_LSTM import DQNImprovement2DuelingFrameStack
+        
+        return DQNImprovement2DuelingFrameStack(
+            learning_rate=config['learning_rate'],
+            buffer_size=config['buffer_size'],
+            learning_starts=config['learning_starts'],
+            batch_size=config['batch_size'],
+            gamma=config['gamma'],
+            target_update_interval=config.get('target_update_interval', 10000),
+            exploration_fraction=config['exploration_fraction'],
+            exploration_initial_eps=config['exploration_initial_eps'],
+            exploration_final_eps=config['exploration_final_eps'],
+            train_freq=config.get('train_freq', 4),
+            gradient_steps=config.get('gradient_steps', 1),
+            n_stack=config.get('n_stack', 4),
+            device=config['device'],
+            seed=config['seed']
+        )
+    
     # Determine which agent to create
-    if 'improvement2' in config_name or config.get('use_frame_stacking', False):
+    elif 'improvement2' in config_name or config.get('use_frame_stacking', False):
         if not HAS_IMPROVEMENT2:
             raise ImportError("❌ DQN_improv2.py not found!")
         
@@ -193,7 +227,7 @@ Examples:
         '--config', 
         type=str, 
         default='DQN_CONFIG',
-        choices=['DQN_CONFIG', 'DQN_IMPROVEMENT_1', 'DQN_IMPROVEMENT_2', 'QUICK_TEST_CONFIG'],
+        choices=['DQN_CONFIG', 'DQN_IMPROVEMENT_1', 'DQN_IMPROVEMENT_2','DQN_IMPROVEMENT_3', 'QUICK_TEST_CONFIG'],
         help='Configuration to use'
     )
     

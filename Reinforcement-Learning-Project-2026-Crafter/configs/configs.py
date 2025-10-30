@@ -123,6 +123,40 @@ DQN_IMPROVEMENT_2 = {
     'seed': 42,
 }
 
+DQN_IMPROVEMENT_3 = {
+    'name': 'DQN_Improvement3_LSTM',
+    'total_timesteps': 500000,
+    'eval_freq': 10000,
+    'save_freq': 50000,
+    
+    # Memory settings - SAME as Improvement 1
+    'batch_size': 32,
+    'buffer_size': 25000,          # SAME as Improv1
+    'learning_starts': 10000,      # SAME as Improv1
+    
+    # Learning - SAME as Improvement 1
+    'learning_rate': 1e-4,
+    'gamma': 0.99,
+    'target_update_interval': 10000,
+    'train_freq': 4,
+    'gradient_steps': 1,
+    
+    # Exploration - SAME as Improvement 1
+    'exploration_fraction': 0.1,   # SAME as Improv1
+    'exploration_initial_eps': 1.0,
+    'exploration_final_eps': 0.05, # SAME as Improv1
+    
+    # Key improvement: Frame stacking
+    'preprocess_type': 'normalize',
+    'reward_shaping': 'none',
+    'use_custom_cnn': True,
+    'n_stack': 4,                  # NEW: Stack 4 frames
+    'use_frame_stacking': True,    # NEW: Enable frame stacking
+    
+    'device': 'cuda',
+    'seed': 42,
+}
+
 # ============================================================================
 # QUICK TEST CONFIGURATION
 # ============================================================================
@@ -157,6 +191,7 @@ def get_config(config_name='DQN_CONFIG'):
         'DQN_CONFIG': DQN_CONFIG,
         'DQN_IMPROVEMENT_1': DQN_IMPROVEMENT_1,
         'DQN_IMPROVEMENT_2': DQN_IMPROVEMENT_2,
+        'DQN_IMPROVEMENT_3': DQN_IMPROVEMENT_3,
         'QUICK_TEST_CONFIG': QUICK_TEST_CONFIG,
     }
     
