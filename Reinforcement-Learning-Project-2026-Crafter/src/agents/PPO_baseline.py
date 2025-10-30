@@ -10,6 +10,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 import matplotlib.pyplot as plt
+import csv
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -235,7 +236,7 @@ def main():
     agent.train(
         total_timesteps=2000000,
         eval_freq=10000,
-        save_dir='Reinforcement-Learning-Project-2026-Crafter/results/PPO/ppo_baseline'
+        save_dir='Reinforcement-Learning-Project-2026-Crafter/results/PPO/models/ppo_baseline'
     )
     # Evaluate
     agent.evaluate(n_episodes=10)

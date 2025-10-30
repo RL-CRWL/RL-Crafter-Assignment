@@ -13,6 +13,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback
+import csv
 
 # Local import for Crafter env
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -341,7 +342,7 @@ def main():
         max_grad_norm=0.5,
         use_reward_shaping=True,
         seed=42,
-        save_dir='results/ppo_improv_csv'
+        save_dir='Reinforcement-Learning-Project-2026-Crafter/results/PPO/models/ppo_improv_2'
     )
 
     agent.train(
