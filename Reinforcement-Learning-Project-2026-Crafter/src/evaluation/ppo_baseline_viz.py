@@ -1,10 +1,14 @@
 from stable_baselines3 import PPO
+
+import numpy as np
+import imageio
 import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.wrappers import make_crafter_env
 
+# === Load environment and model ===
 # === Load environment and model ===
 env = make_crafter_env()
 model_path = "../agents/results/ppo_baseline/ppo_baseline_model.zip"
