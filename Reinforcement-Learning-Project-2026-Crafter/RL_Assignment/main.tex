@@ -90,6 +90,19 @@ In addition these are the following theoretical benefits of PPO:
     \item \textbf{Facilitates Exploration:} The PPO objective often includes an entropy bonus term, which encourages the agent to explore different actions and strategies. This is vital in Crafter, which features wide, procedurally generated worlds and independent achievements that require broad exploration to discover all possibilities.
 \end{itemize}
 
+\subsection*{Hyperparamters used accross all agents}
+\item \textbf{PPO Training:} These hyperparameters were standardized for all agents so as to make sure the comparison is done based on the differing algorithms and not hyperparameter tuning.
+\begin{itemize}
+    \item Learning rate: $3 \times 10^{-4}$
+    \item Rollout steps (n\_steps): 2,048
+    \item Batch size: 64
+    \item Epochs per update: 10
+    \item Discount factor ($\gamma$): 0.99
+    \item GAE lambda ($\lambda$): 0.95
+    \item Clip range: 0.2
+    \item Entropy coefficient: 0.01
+\end{itemize}
+
 \subsection*{Baseline Implementation}
 The baseline agent was implemented using the Stable-Baselines3 PPO algorithm. The initial hyperparameters were chosen to provide stable learning without aggressive updates, ensuring reproducibility. The agent at this point perceives the environment through single still images (frames) rather than continuous sequences, meaning it has only a limited view of the environment at each step.
 \subsubsection*{Observations and Performance}
@@ -121,7 +134,14 @@ To address these issues, a Recurrent PPO (R-PPO) architecture was introduced. Th
 
 \subsubsection*{Improvement 2 Implementation}
 To address the baseline and improvement 1 limitations in memory and exploration, we implemented a \textbf{Recurrent Proximal Policy Optimization (Recurrent PPO)} agent. This model extends PPO by incorporating a Long Short-Term Memory (LSTM) layer, enabling the policy to retain temporal context across time steps. This memory mechanism helps the agent handle the partially observable nature of the Crafter environment, where important state information may not be visible in a single frame.
-The hyperparameters were kept the same as the baseline to make sure that the LSTM implementation would show a decent improvement in comparison to the baeline.
+The following hyperparameters were added in addition to the previous implementations:
+
+\begin{itemize}
+    \item \textbf{Value function coefficient ($vf\_coef$):} 0.5
+    \item \textbf{Maximum gradient norm ($max\_grad\_norm$):} 0.5
+    \item \textbf{Reward shaping:} Enabled (\texttt{use\_reward\_shaping=True})
+\end{itemize}
+
 
 Additonally, slight reward shaping was employed to accelerate convergence and guide exploration towards useful sub-goals. This ensured that intermediate achievements (such as crafting tools or collecting resources) contributed meaningful gradient signals during training.
 \begin{figure}[H]
