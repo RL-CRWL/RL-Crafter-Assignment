@@ -82,8 +82,8 @@ Deep Q-Network (DQN) is a value-based reinforcement learning algorithm that comb
 \subsection*{Motivation}
 DQN is well-suited for the Crafter environment due to several key characteristics. The environment's discrete action space (with 17 possible actions) aligns naturally with DQN's design, where the network outputs Q-values for each action. Crafter's visual observation space ($64 \times 64 \times 3$ RGB images) benefits from DQN's convolutional neural network architecture, which can extract spatial features and patterns from the procedurally generated world. Additionally, DQN's experience replay mechanism is particularly valuable in Crafter, where diverse experiences across different procedurally generated worlds can be stored and reused, improving sample efficiency in an environment with sparse achievement rewards and dense survival rewards.
 
-\subsection*{Hyperparameters used across all agents}
-To ensure fair comparison and isolate the effects of algorithmic improvements, the following hyperparameters were standardized across all DQN implementations:
+\subsection*{Hyperparameters}
+The following hyperparameters were used for the baseline and first improvement DQN implementations.:
 
 \begin{table}[H]
 \centering
@@ -107,6 +107,7 @@ Total training timesteps & 500,000 \\
 \end{tabular}
 \caption{Standardized DQN hyperparameters}
 \end{table}
+The buffer size was reduced to 25,000 for the second improvement due to memory constraints.
 
 \subsection*{Baseline Implementation}
 
@@ -402,7 +403,28 @@ The success of this minimal-change strategy validates the principle of iterative
 
 \subsubsection*{Next Steps for Improvement 2}
 
-Based on this analysis, potential directions for further improvement include:
+Based on the analysis from Improvement 1, it is clear that the improved CNN feature extraction had a significant improvement over the baseline. Thus the decision to carry this improvement forward with additional changes to features extractor architecture was made. As described in the analysis, the agent struggled with temporal context and sample efficiency. Frame-Stacking feeds the last $n$ frames into the network by changing the input dimensions from (C, W, H) to (C, W, H * $n$), allowing more data to be processed through multiple steps of the environment. This provides more context to the agent, and allows it to see information through time, encouraging it to make more informed decisions. This should improve it's horizon planning, temporal context and sample efficiency. To complement this change, a residual block with residual connections is added to the feature extractor. This should make it more likely for the agent to remember the earlier stages of exploration as the gradients back-propagated through the extraction network will be strengthened, further improving its horizon planning and temporal context. 
+
+\subsection*{Improvement 2: Residual Block CNN Enhancement with Frame-Stacking}
+\begin{enumerate}
+	\item \textbf{Residual Block:} 
+	
+	\item \textbf{Frame-Stacking:} 
+\end{enumerate}
+
+\subsubsection*{Implementation Details}
+
+\textbf{Residual CNN Architecture:}
+
+The new network shares the structure as the previous version, but introduces residual layers.
+
+\begin{itemize}
+	\item \textbf{Conv1:} $32 \rightarrow 48$ filters, $8 \times 8$ kernel, stride 4
+	\item \textbf{Conv2:} $64 \rightarrow 96$ filters, $4 \times 4$ kernel, stride 2  
+	\item \textbf{Conv3:} $64 \rightarrow 96$ filters, $3 \times 3$ kernel, stride 1
+	\item \textbf{FC layers:} 256 features (unchanged)
+	\item \textbf{Output:} 17 Q-values (unchanged)
+\end{itemize}
 
 
 \section*{Out-of-class Algorithm: PPO}
