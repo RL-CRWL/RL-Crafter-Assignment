@@ -84,10 +84,9 @@ For more details, see the [Crafter paper](https://arxiv.org/pdf/2109.06780) and 
 
 ## 📁 Project Structure
 ```
-reinforcement-learning-crafter/
-│
+Reinforcement-Learning-Project-2026-Crafter/
 ├── configs/
-│   └── configs.py                        # Training configurations
+│   └── configs.py                        # Training configurations and hyperparameters
 │
 ├── src/
 │   ├── agents/
@@ -99,7 +98,7 @@ reinforcement-learning-crafter/
 │   │   ├── DQN_improv3.py                # Improvement 3: Advanced exploration
 │   │   ├── PPO_baseline.py               # Baseline PPO implementation
 │   │   ├── PPO_improv1.py                # PPO Improvement 1
-│   │   ├── PPO_improv2.py                # PPO Improvement 2
+│   │   ├── PPO_improv2.py                # PPO Improvement 2 (Recurrent PPO)
 │   │   └── results/
 │   │       └── __init__.py
 │
@@ -116,22 +115,34 @@ reinforcement-learning-crafter/
 │       ├── Evaluate-PPO.py               # Evaluate PPO agents
 │       ├── Evaluate-Recurrent.py         # Evaluate Recurrent PPO performance
 │       ├── Evaluate.py                   # General evaluation entrypoint
-│       ├── Visualiser.py                 # Visualization of results and rewards
-│       ├── compare_models.py             # Compare models statistically
-│       ├── debuggy.py                    # Debugging script for agent performance
-│       ├── ppo_baseline_viz.py           # PPO baseline visualization
+│       ├── Visualiser.py                 # Visualization of training and rewards
+│       ├── compare_models.py             # Compare trained model performance
+│       ├── debuggy.py                    # Debugging and quick test script
+│       ├── ppo_baseline_viz.py           # Visualization for PPO baseline
 │       ├── ppo_improv1_viz.py            # Visualization for PPO Improvement 1
-│       ├── ppo_improv2_viz.py            # Visualization for PPO Improvement 2
+│       └── ppo_improv2_viz.py            # Visualization for PPO Improvement 2
 │
 ├── scripts/
-│   ├── train.py                          # Main training script for all agents
-│   └── evaluate_saved_model.py           # Load and evaluate trained models
+│   ├── train.py                          # Main training script for PPO and DQN agents
+│   └── evaluate_saved_model.py           # Load and evaluate saved models
 │
-├── results/                              # Saved models, logs, metrics, videos
+├── results/
+│   └── PPO/
+│       ├── models/                       # Saved model checkpoints
+│       │   ├── ppo_baseline/
+│       │   │   └── ppo_baseline_model.zip
+│       │   ├── ppo_improv_1/
+│       │   │   └── ppo_rnd_model.zip
+│       │   └── ppo_improv_2/
+│       │       └── recurrent_ppo_model.zip
+│       └── results/                      # Evaluation outputs, metrics, and logs
+│           ├── ppo_baseline/
+│           ├── ppo_improv_1/
+│           └── ppo_improv_2/
 │
 ├── requirements.txt                      # Python dependencies
-└── README.md                             # Project overview and usage guide
-
+├── Makefile                              # Automates PPO model training and evaluation
+└── README.md                             # Project overview, setup, and usage guide
 
 ```
 
@@ -535,7 +546,82 @@ Performance metrics logged include:
 
 All results based on 1,000 evaluation episodes per agent.
 
-## 🚀 Usage
+## 🚀 PPO Usage
+
+### Training Agents
+
+#### Train Baseline PPO
+```bash
+make PPO_Baseline
+```
+Trains the baseline PPO agent and saves the model to `results/PPO/models/ppo_baseline/`
+
+#### Train PPO with RND
+```bash
+make PPO_Improv1
+```
+Trains the PPO agent with Random Network Distillation and saves the model to `results/PPO/models/ppo_improv_1/`
+
+### Evaluating Agents
+
+#### Evaluate All Models
+```bash
+make Results
+```
+This command evaluates all three models (Baseline PPO, PPO+RND, and Recurrent PPO) over 1,000 episodes each and saves the results to their respective directories:
+- `results/PPO/results/ppo_baseline/`
+- `results/PPO/results/ppo_improv_1/`
+- `results/PPO/results/ppo_improv_2/`
+
+#### Evaluate Recurrent PPO Only
+```bash
+make Results_PPO_2
+```
+Evaluates only the Recurrent PPO model over 1,000 episodes.
+
+### Custom Evaluation
+
+You can also run evaluations manually with custom parameters:
+
+#### For Standard PPO (Baseline and RND)
+```bash
+python Reinforcement-Learning-Project-2026-Crafter/src/evaluation/Evaluate-PPO.py \
+    --model  \
+    --n_episodes  \
+    --save_dir 
+```
+
+#### For Recurrent PPO
+```bash
+python Reinforcement-Learning-Project-2026-Crafter/src/evaluation/Evaluate-Recurrent.py \
+    --model  \
+    --n_episodes  \
+    --save_dir 
+```
+
+### Evaluation Metrics
+
+The evaluation scripts generate comprehensive metrics including:
+- **Reward Distribution:** Frequency of different reward values across episodes
+- **Survival Distribution:** Episode length statistics
+- **Achievement Rates:** Percentage of episodes where each achievement was unlocked
+- **Summary Statistics:** Mean, standard deviation, min/max rewards and episode lengths
+
+Results are saved as:
+- CSV files for numerical data
+- PNG files for visualization plots
+
+### Configuration
+
+The default evaluation configuration uses:
+- **Number of Episodes:** 1,000
+- **Evaluation Mode:** Deterministic policy (no exploration randomness)
+- **Seed:** Consistent seeding for reproducibility
+
+To modify the number of evaluation episodes, edit the `episodes` variable in the Makefile or pass a custom value via command-line arguments.
+
+
+## 🚀 DQN Usage
 
 ### Training Agents
 
