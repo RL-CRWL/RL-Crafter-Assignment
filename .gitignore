@@ -13,3 +13,6 @@ __pycache__/
 *.synctex.gz
 *.fdb_latexmk
 *.fls
+*.bbl
+*.blg
+*.out
