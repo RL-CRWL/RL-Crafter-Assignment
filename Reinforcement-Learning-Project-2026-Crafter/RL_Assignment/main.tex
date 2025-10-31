@@ -368,7 +368,6 @@ Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes
 	\caption{Survival time distribution of DQN Improvement 2 over 50 evaluation episodes}
 	\label{fig:dqn_improv2_survival}
 \end{figure}
-
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/DQNImprov2achievement_rates.png}
@@ -376,19 +375,47 @@ Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes
 	\label{fig:dqn_improv2_achievements}
 \end{figure}
 
-\subsubsection*{Improvement 1 vs Improvement 2 Comparison}
+\subsection*{Final Comparison}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2survival_comparison.png}
+	\caption{Comparison of the mean survival time (steps) of each agent version.}
+	\label{fig:dqn_comp_survival}
+\end{figure}
+\newpage
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2reward_comparison.png}
+	\caption{Comparison of the reward distribution of each agent version.}
+	\label{fig:dqn_comp_reward}
+\end{figure}
 
-To better understand the differences between the two improvements, we compare their mean rewards, achievement performance, and overall progress:
-
-
-\textbf{Key Observations:}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2mean_reward_comparison.png}
+	\caption{Comparison of the mean reward of each agent version.}
+	\label{fig:dqn_comp_mean_reward}
+\end{figure}
+\vspace{-10pt}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2geometric_mean_comparison.png}
+	\caption{Comparison of the geometric mean (achievement performance) of each agent version.}
+	\label{fig:dqn_comp_geo_mean}
+\end{figure}
+\vspace{-10pt}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2achievement_heatmap.png}
+	\caption{A heatmap showing the achievements gained by each agent version.}
+	\label{fig:dqn_comp_heatmap}
+\end{figure}
 
 \begin{itemize}
 	\item \textbf{Mean reward:} Improvement 1 achieves a higher mean reward than Improvement 2, indicating more consistent policy performance in terms of immediate rewards.
 	\item \textbf{Achievement progression:} Despite lower mean reward, Improvement 2 achieves a higher geometric mean and overall achievement performance, suggesting better multi-step planning and strategic progress.
 	\item \textbf{Trade-off:} Improvement 1 favors short-term reward optimization, while Improvement 2 favors long-term achievement unlocking, highlighting the impact of residual CNN and frame-stacking in supporting temporal planning.
 \end{itemize}
-
 
 \section*{Out-of-class Algorithm: PPO}
 
