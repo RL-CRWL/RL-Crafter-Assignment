@@ -283,23 +283,6 @@ All hyperparameters remain identical to the baseline (see Table 1) to isolate th
 
 Improvement 1 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps.
 
-\begin{table}[H]
-\centering
-\begin{tabular}{lcc}
-\toprule
-\textbf{Metric} & \textbf{Baseline} & \textbf{Improvement 1} \\
-\midrule
-Mean reward & $3.46 \pm 1.81$ & $4.32 \pm 1.30$ \\
-$\Delta$ from baseline & --- & \textcolor{blue}{+24.9\%} \\
-Mean survival time & $193.02 \pm 80.24$ & $197.66 \pm 57.73$ \\
-Achievements unlocked & 9/22 & 10/22 \\
-Geometric mean & 31.27\% & 35.42\% \\
-$\Delta$ from baseline & --- & \textcolor{blue}{+13.3\%} \\
-\bottomrule
-\end{tabular}
-\caption{Performance comparison: Baseline vs Improvement 1}
-\end{table}
-
 \textbf{Key Improvements:}
 
 \begin{itemize}
@@ -331,35 +314,6 @@ $\Delta$ from baseline & --- & \textcolor{blue}{+13.3\%} \\
 \end{figure}
 
 \subsubsection*{Achievement Progression Analysis}
-
-Comparing achievement unlock rates between baseline and Improvement 1 reveals significant behavioral changes:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcc}
-\toprule
-\textbf{Achievement} & \textbf{Baseline} & \textbf{Improv 1} \\
-\midrule
-\multicolumn{3}{l}{\textit{Significant Improvements}} \\
-collect\_sapling & 60\% & 88\% (+47\%) \\
-defeat\_zombie & 8\% & 28\% (+250\%) \\
-make\_wood\_sword & 2\% & 6\% (+200\%) \\
-make\_wood\_pickaxe & 0\% & 4\% (\textbf{new}) \\
-\midrule
-\multicolumn{3}{l}{\textit{Maintained High Performance}} \\
-wake\_up & 88\% & 88\% \\
-collect\_wood & 80\% & 86\% \\
-place\_plant & 52\% & 86\% (+65\%) \\
-place\_table & 50\% & 60\% \\
-\midrule
-\multicolumn{3}{l}{\textit{Strategic Trade-offs}} \\
-collect\_drink & 74\% & 48\% (-35\%) \\
-eat\_cow & 22\% & 28\% \\
-\bottomrule
-\end{tabular}
-\caption{Notable achievement unlock rate changes}
-\end{table}
 
 \textbf{Behavioral Insights:}
 
@@ -437,23 +391,6 @@ The same observation preprocessing and weight initialisations were used, however
 \subsubsection*{Evaluation Results (Eval 3)}
 
 Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps.
-
-\begin{table}[H]
-	\centering
-	\begin{tabular}{lcc}
-		\toprule
-		\textbf{Metric} & \textbf{Baseline} & \textbf{Improvement 2} \\
-		\midrule
-		Mean reward & $3.56 \pm 1.70$ & $3.26 \pm 1.24$ \\
-		$\Delta$ from baseline & --- & \textcolor{red}{-8.4\%} \\
-		Mean survival time & (not reported) & (not reported) \\
-		Achievements unlocked & 10/22 & 7/22 \\
-		Geometric mean & 24.91\% & 44.16\% \\
-		$\Delta$ from baseline & --- & \textcolor{blue}{+77.3\%} \\
-		\bottomrule
-	\end{tabular}
-	\caption{Performance comparison: Baseline vs Improvement 2}
-\end{table}
 
 \subsubsection*{Improvement 1 vs Improvement 2 Comparison}
 
