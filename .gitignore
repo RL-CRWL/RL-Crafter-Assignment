@@ -5,3 +5,11 @@
 .txt
 Miniconda3-latest-Linux-x86_64.sh
 __pycache__/
+# latex stuff
+*.aux
+*.bcf
+*.log
+*.run.xml
+*.synctex.gz
+*.fdb_latexmk
+*.fls
