@@ -7,3 +7,5 @@ Miniconda3-latest-Linux-x86_64.sh
 __pycache__/
 evaluation_data.csv
 training_data.csv
+logdir
+**/__pycache__/
