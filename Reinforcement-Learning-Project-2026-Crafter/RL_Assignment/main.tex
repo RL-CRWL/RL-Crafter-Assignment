@@ -355,7 +355,7 @@ The same observation preprocessing and weight initialisations were used, however
 
 \subsubsection*{Evaluation Results (Eval 3)}
 
-Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps.
+Improvement 2 was re-evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps. This was to ensure correctness of the results, which proved to be similar to the original evaluation.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/DQNImprov2reward_distribution.png}
@@ -413,8 +413,9 @@ Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes
 \end{figure}
 
 \begin{itemize}
-	\item \textbf{Mean reward:} Improvement 1 achieves a higher mean reward than Improvement 2, indicating more consistent policy performance in terms of immediate rewards.
-	\item \textbf{Achievement progression:} Despite lower mean reward, Improvement 2 achieves a higher geometric mean and overall achievement performance, suggesting better multi-step planning and strategic progress.
+	\item \textbf{Reward Distribution:} As shown in Figure \ref{fig:dqn_comp_reward}, the baseline had the widest range of rewards, with majority being in the range of 2 and 4 and a low of roughly 0. Improvement 1 on the other hand had a lowest reward of 2. This demonstrates the success of the modified architecture to better extract the features of the environment. Although Improvement 2 started off similarly, it ultimately had a peak of 5 reward with majority between 3 and 4 with a few outliers.
+	\item \textbf{Mean reward:} Improvement 1 achieves a higher mean reward than Improvement 2, indicating more consistent policy performance in terms of immediate rewards, but achieves a lower mean reward than the baseline. It is possible that the extra layers required more than 500,000 timesteps to converge to a similar reward, or the added complexity of the residual connections made it more difficult to learn more efficient feature extraction.
+	\item \textbf{Achievement progression:} Despite lower mean reward, Improvement 2 achieves a higher geometric mean and overall achievement performance, suggesting better multi-step planning and strategic progress. As shown in Figure \ref{fig:dqn_comp_geo_mean}, 
 	\item \textbf{Trade-off:} Improvement 1 favors short-term reward optimization, while Improvement 2 favors long-term achievement unlocking, highlighting the impact of residual CNN and frame-stacking in supporting temporal planning.
 \end{itemize}
 
