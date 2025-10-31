@@ -108,6 +108,7 @@ Reinforcement-Learning-Project-2026-Crafter/
 │       ├── ppo_baseline_highlights/      # Highlight frames for PPO baseline runs
 │       ├── recurrent_ppo_highlights/     # Highlight frames for Recurrent PPO runs
 │       ├── Compare-PPO.py                # Compare PPO agents (baseline vs improved)
+│       ├── Evaluate_FS.py                # Evaluates DQN Improvement 2 agent (different because of input size)
 │       ├── Evaluate-PPO.py               # Evaluate PPO agents
 │       ├── Evaluate-Recurrent.py         # Evaluate Recurrent PPO performance
 │       ├── Evaluate.py                   # General evaluation entrypoint
