@@ -388,7 +388,7 @@ def main():
             metrics = evaluate_model(
                 config['path'],
                 config['env_config'],
-                n_episodes=100,
+                n_episodes=1000,
                 model_name=model_name,
                 is_recurrent=config.get('is_recurrent', False)
             )
