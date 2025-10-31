@@ -91,7 +91,7 @@ In addition these are the following theoretical benefits of PPO:
 \end{itemize}
 
 \subsection*{Hyperparamters used accross all agents}
-\item \textbf{PPO Training:} These hyperparameters were standardized for all agents so as to make sure the comparison is done based on the differing algorithms and not hyperparameter tuning.
+\textbf{PPO Training:} These hyperparameters were standardized for all agents so as to make sure the comparison is done based on the differing algorithms and not hyperparameter tuning.
 \begin{itemize}
     \item Learning rate: $3 \times 10^{-4}$
     \item Rollout steps (n\_steps): 2,048
@@ -106,18 +106,24 @@ In addition these are the following theoretical benefits of PPO:
 \subsection*{Baseline Implementation}
 The baseline agent was implemented using the Stable-Baselines3 PPO algorithm. The initial hyperparameters were chosen to provide stable learning without aggressive updates, ensuring reproducibility. The agent at this point perceives the environment through single still images (frames) rather than continuous sequences, meaning it has only a limited view of the environment at each step.
 \subsubsection*{Observations and Performance}
-The baseline PPO agent exhibited some exploratory behavior and moderate learning progress. However, its limited temporal awareness significantly constrained performance. The average episodic reward stabilized around \textbf{3.26}, with the maximum reward achieved being \textbf{7.1}.
-The following figures show the reward and survival distribution rates over 100 episodes:
+The baseline PPO agent exhibited some exploratory behavior and moderate learning progress. However, its limited temporal awareness significantly constrained performance. The average episodic reward stabilized around \textbf{2.66}, with the maximum reward achieved being \textbf{6.1}.
+The following figures show the reward and survival distribution rates, as well as the achievement rates, over 1000 episodes:
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_baseline.png}
+    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_baseline_1000_episodes.png}
     \caption{Reward distribution of PPO baseline}
     \label{fig:placeholder}
 \end{figure}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_baseline.png}
+    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_baseline_1000_episodes.png}
     \caption{Survival distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/achievement_rates_ppo_baseline_1000_episodes.png}
+    \caption{Achievement rate of PPO baseline}
     \label{fig:placeholder}
 \end{figure}
 \subsubsection*{Identified areas of improvement}
@@ -126,12 +132,13 @@ The following weaknesses were identified in the baseline model:
     \item \textbf{Lack of Memory:} The agent cannot recall previous states or actions, leading to suboptimal long-term decision-making.
     \item \textbf{Limited Exploration:} Without memory or intrinsic motivation, exploration remained shallow, resulting in repetitive behavior.
 \end{itemize}
-\subsubsection*{Improvements and Methodology}
-To address these issues, a Recurrent PPO (R-PPO) architecture was introduced. This variant augments the standard PPO with a recurrent neural network (RNN) layer, allowing the policy to maintain an internal state across time steps. This addition provides the agent with short-term memory, improving decision consistency under partial observability.
+
 
 \subsection*{Improvement 1: Random Network Distillation}
 \subsubsection*{Background}
 Random Network Distillation (RND) is an exploration method that encourages reinforcement learning agents to explore novel states by providing intrinsic rewards based on prediction error. The method uses two neural networks: a target network that is randomly initialized and kept fixed, and a predictor network that is trained to predict the target network's outputs. The target network maps observations to feature vectors and remains frozen throughout training. The predictor network shares the same input-output architecture and is trained via gradient descent to minimize the mean squared error. The intrinsic reward is computed as the prediction error. This error is high for novel or infrequent states (where the predictor hasn't learned well) and low for frequently visited states (where the predictor has converged). \parencite{burda2018exploration}
+\subsubsection*{Improvements}
+RND is introduced to address the limited exploration of the baseline implementation. Because Crafter is an environment with sparce rewards, traditional reinforcement learning methods may not work as they rely on dense rewards. We hypothesise that RND should improve the average reward of the agent due in part to its larger exploration window, allowing for more opportunities for rewards to be obtained.
 
 \subsubsection*{Methodology}
 \textbf{\textit{Architecture}}\\
@@ -163,7 +170,7 @@ where $\lambda$ is the intrinsic reward coefficient (set to 1.0 by default). Thi
 \begin{itemize}
     \item \textbf{RND Module Updates:} The predictor network is trained using mean squared error loss between its outputs and the fixed target network outputs. The optimizer uses Adam with learning rate $1 \times 10^{-4}$.
 
-    \item \textbf{PPO Training:} The PPO agent is trained on the combined reward signal using standard hyperparameters and the following:
+    \item \textbf{PPO Training:} The PPO agent is trained over $3\times10^6$ timesteps on the combined reward signal using standard hyperparameters and the following:
 \begin{itemize}
     \item $intrinsic\_reward\_coef=1.0$
     \item $rnd\_learning\_rate=1\times10^{-4}$
@@ -183,13 +190,31 @@ This approach addresses the sparse reward problem in Crafter by providing dense 
 \textbf{\textit{Implementation Details}}\\
 The implementation utilizes PyTorch for neural networks and Stable Baselines3 for the PPO algorithm. The RND networks use $3 \times 3$ convolutional kernels optimized for Crafter's $64 \times 64$ observation space. Running statistics for reward normalization use Welford's online algorithm to maintain numerical stability. All experiments use seed 42 for reproducibility, with the evaluation environment seeded at 142 to ensure different but deterministic trajectories.
 \subsubsection*{Results}
-\begin{figure}[h]
+The agent was evaluated over 1000 episodes, giving an average reward of \textbf{3.3} and a maximum reward of \textbf{7.1}. This is an improvement of around \textbf{24\%} and around \textbf{16\%} over the average reward and maximum reward, respectively. This provides evidence that with RND, the average reward obtained improves from the baseline. However, this is a minor improvement and further improvements can be made by tuning the hyperparameters of the RND networks or running the training for more timesteps, which may give the agent more opportunities to explore novel states. Below are the figures showing the reward and survival distribution rates, as well as the achievement rates, over 1000 episodes:
+\begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{PPO Improvement 1 Evaluation Performance.png}
-    \caption{PPO Improvement 1 Evaluation Performance}
+    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_improv1_1000_episodes.png}
+    \caption{Reward distribution of PPO baseline}
     \label{fig:placeholder}
 \end{figure}
+From this figure, the RND agent receives higher rewards more frequently than the baseline. This makes sense since by trying novel actions, there are more possibilities for rewards. However, a consequence of this is that the frequency of different rewards is not as uniform as the baseline.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_improv1_1000_episodes.png}
+    \caption{Survival distribution of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+The RND figure in comparison to the baseline shows that the baseline tends to survive longer than the improvement. This can also be explained by the fact that the agent is more likely to explore - through more exploration comes more opportunities to enter states that lead the agent to die.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{images/achievement_rates_ppo_improv1_1000_episodes.png}
+    \caption{Achievement rate of PPO baseline}
+    \label{fig:placeholder}
+\end{figure}
+This figure shows that, in comparison to the baseline, the RND agent will have a less consistent spread of acheivement unlock rates since the agent is encouraged to choose novel states. While the baseline shows that over time the agent learns to repeat tasks that will provide it more rewards in the future, the RND has high achievement rates on tasks that won't offer much benefit to the agent, such as placing plants, or not eating and drinking as much.
 \subsubsection*{Discussion}
+\textbf{\textit{Strengths and weaknesses}}\\
+The strengths of this implementation follow as a consequence of its approach. Because the agent is encouraged to explore more, the agent is more likely to unlock more acheivements, receive greater rewards, and learn more aboout the environment at a faster rate as compared to the baseline. However, its weaknesses are that it requires far more training time than the baseline since there is a large number of possible states to explore and similar to Monte Carlo exploration, requires a large numebr of episodes to get a good idea of the environment and its dynamics. Another weakness of the current RND implementation is the context window is very small, and thus even when the agent unlocks new achievements, these achievements and the rewards associated with them aren't carrying over in future.\\
 \textbf{\textit{Differences from Standard RND Implementation}}\\
 This implementation differs from the standard Random Network Distillation approach proposed by \cite{burda2018exploration} in several key aspects. The standard RND implementation uses two separate value functions---one for extrinsic returns and one for intrinsic returns---allowing different discount factors to be applied (typically $\gamma=0.99$ for intrinsic and $\gamma=0.999$ for extrinsic rewards), whereas this implementation uses a single combined value function with a uniform discount factor of 0.99. The CNN architecture has been simplified and adapted for Crafter's $64 \times 64$ observation space, using smaller $3 \times 3$ kernels throughout instead of the larger $8 \times 8$ and $4 \times 4$ kernels designed for $84 \times 84$ Atari frames, and omitting batch normalization and other regularization layers. Unlike standard RND which normalizes observations before feeding them to the RND networks and maintains separate statistics for intrinsic and extrinsic rewards, this implementation applies only basic running statistics normalization to intrinsic rewards using Welford's algorithm, with raw observations fed directly to the networks. The standard approach typically employs 128 or more parallel environments for efficient data collection and diverse training batches, updating the predictor network on mini-batches from the rollout buffer with multiple gradient steps per rollout, whereas this implementation uses a single environment instance with per-step predictor updates, resulting in slower data collection and potentially noisier gradient estimates. Additionally, standard RND implementations include explicit reward clipping to prevent extreme values, separate advantage normalization for intrinsic and extrinsic components, and curiosity-driven exploration decay schedules, none of which are present in this implementation which uses a fixed intrinsic reward coefficient. Finally, the evaluation procedure differs: standard RND evaluates with intrinsic rewards completely disabled to measure true task performance without exploration bonuses, while this implementation uses deterministic policy evaluation without explicitly disabling the RND wrapper, making the separation between exploration and exploitation performance less clear.
 \subsection*{Improvement 2: Long-Short Term Memory}
@@ -236,13 +261,13 @@ The following figures show the different reward and survival distribution rates 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_improv2.png}
+    \includegraphics[width=0.75\linewidth]{images/reward_distribution_ppo_improv2_1000_episodes.png}
     \caption{Reward distribution of PPO baseline}
     \label{fig:placeholder}
 \end{figure}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_improv2.png}
+    \includegraphics[width=0.75\linewidth]{images/survival_distribution_ppo_improv2_1000_episodes.png}
     \caption{Survival distribution of PPO baseline}
     \label{fig:placeholder}
 \end{figure}
@@ -257,7 +282,7 @@ This highlights a fundamental reinforcement learning trade-off between \textit{r
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{images/ComparisonPPO.jpg}
+    \includegraphics[width=0.75\linewidth]{images/ComparisonPPO.png}
     \caption{Comparison Metrics accross all PPO agents}
     \label{fig:placeholder}
 \end{figure}
