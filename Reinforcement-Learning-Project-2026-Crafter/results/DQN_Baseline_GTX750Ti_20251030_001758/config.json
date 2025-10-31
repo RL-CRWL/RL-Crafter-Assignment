@@ -1,0 +1,21 @@
+{
+  "name": "DQN_Baseline_GTX750Ti",
+  "total_timesteps": 500000,
+  "eval_freq": 10000,
+  "save_freq": 50000,
+  "learning_rate": 0.0001,
+  "buffer_size": 50000,
+  "learning_starts": 5000,
+  "batch_size": 32,
+  "gamma": 0.99,
+  "target_update_interval": 5000,
+  "train_freq": 4,
+  "gradient_steps": 1,
+  "exploration_fraction": 0.15,
+  "exploration_initial_eps": 1.0,
+  "exploration_final_eps": 0.05,
+  "preprocess_type": "none",
+  "reward_shaping": "none",
+  "device": "cuda",
+  "seed": 42
+}
