@@ -9,9 +9,10 @@
 \usepackage{float}
 \usepackage{moresize}
 
-\usepackage[backend=biber,style=authoryear]{biblatex} % Choose your style
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[backend=biber,style=ieee,url=true,doi=true]{biblatex}
 \addbibresource{references.bib} % Use the name of your .bib file
-    
+
 
 \definecolor{codegray}{gray}{0.9}
 \definecolor{deepblue}{rgb}{0,0,0.5}
@@ -647,8 +648,10 @@ This highlights a fundamental reinforcement learning trade-off between \textit{r
     \label{fig:placeholder}
 \end{figure}
 
-\section*{DQN vs PPO}
 \section*{Conclusion}
+
+In summary, both DQN and PPO demonstrated the ability to learn meaningful behaviors within the Crafter environment, but with differing strengths. PPO achieved higher overall performance and stability, showing superior adaptability to diverse tasks. However, this came at the cost of greater computational demand and tuning sensitivity. DQN performed reasonably well but exhibited slower convergence and less consistency. Overall, PPO proved to be the more effective algorithm for this setting, though each method revealed valuable insights into the trade-offs between stability, efficiency, and implementation complexity in reinforcement learning.
+
 \printbibliography
 
 \end{document}
