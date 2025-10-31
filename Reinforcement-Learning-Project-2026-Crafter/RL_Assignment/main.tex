@@ -355,24 +355,31 @@ The same observation preprocessing and weight initialisations were used, however
 \subsubsection*{Evaluation Results (Eval 3)}
 
 Improvement 2 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2reward_distribution.png}
+	\caption{Reward distribution of DQN Improvement 2 over 50 evaluation episodes}
+	\label{fig:dqn_improv2_reward}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2survival_distribution.png}
+	\caption{Survival time distribution of DQN Improvement 2 over 50 evaluation episodes}
+	\label{fig:dqn_improv2_survival}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{images/DQNImprov2achievement_rates.png}
+	\caption{Achievement unlock rates for DQN Improvement 2}
+	\label{fig:dqn_improv2_achievements}
+\end{figure}
 
 \subsubsection*{Improvement 1 vs Improvement 2 Comparison}
 
 To better understand the differences between the two improvements, we compare their mean rewards, achievement performance, and overall progress:
 
-\begin{table}[H]
-	\centering
-	\begin{tabular}{lcc}
-		\toprule
-		\textbf{Metric} & \textbf{Improvement 1} & \textbf{Improvement 2} \\
-		\midrule
-		Mean reward & $4.38 \pm 1.33$ & $3.26 \pm 1.24$ \\
-		Achievements unlocked & 10/22 & 7/22 \\
-		Geometric mean & 37.18\% & 44.16\% \\
-		\bottomrule
-	\end{tabular}
-	\caption{Performance comparison: Improvement 1 vs Improvement 2}
-\end{table}
 
 \textbf{Key Observations:}
 
