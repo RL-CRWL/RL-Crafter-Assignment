@@ -405,7 +405,7 @@ def print_detailed_comparison(all_metrics):
 def main():
     """Main comparison function"""
     
-    n_episodes = 10
+    n_episodes = 1000
     
     results_dir='../../results/PPO/'
     baseline_model_dir = 'ppo_baseline/ppo_baseline_model.zip'
