@@ -315,6 +315,226 @@ Q-values (17 actions)
 
 ---
 
+### Proximal Policy Optimization (PPO) for Crafter Environment
+
+#### Algorithm Overview
+
+PPO (Proximal Policy Optimization) is a reinforcement learning algorithm that trains an agent by optimizing its decision-making policy. It works by collecting data through interactions with an environment and then using a clipped objective function to make stable updates to the policy. This approach is known for being more stable, efficient, and easier to implement than some other policy gradient methods.
+
+#### Why PPO for Crafter?
+
+PPO provides a strong balance of stability, sample efficiency, and simplicity while effectively handling the Crafter environment's key challenges, such as sparse rewards, long-term reasoning, and procedural generation.
+
+#### Key Theoretical Benefits
+
+- **Stable Policy Updates:** Crafter is complex and dynamic, where large, unconstrained policy updates could easily destabilize training and cause the agent to forget beneficial behaviors. PPO's clipping mechanism limits how much the policy can change at each step, ensuring stable and controlled learning.
+
+- **Sample Efficiency:** Crafter involves many different achievements and complex interactions, meaning efficient use of experience is crucial. PPO is relatively sample-efficient because it can reuse collected data over multiple training epochs (mini-batches) without significant instability.
+
+- **Facilitates Exploration:** The PPO objective often includes an entropy bonus term, which encourages the agent to explore different actions and strategies. This is vital in Crafter, which features wide, procedurally generated worlds and independent achievements that require broad exploration.
+
+##### Standard Hyperparameters
+
+These hyperparameters were standardized across all agents to ensure fair comparison:
+
+| Hyperparameter | Value |
+|----------------|-------|
+| Learning rate | 3 × 10⁻⁴ |
+| Rollout steps (n_steps) | 2,048 |
+| Batch size | 64 |
+| Epochs per update | 10 |
+| Discount factor (γ) | 0.99 |
+| GAE lambda (λ) | 0.95 |
+| Clip range | 0.2 |
+| Entropy coefficient | 0.01 |
+
+---
+
+### Baseline Implementation
+
+#### Overview
+The baseline agent uses Stable-Baselines3 PPO with standard hyperparameters. The agent perceives the environment through single still images (frames) rather than continuous sequences, providing only a limited view at each step.
+
+#### Performance
+- **Average Reward:** 2.66
+- **Maximum Reward:** 6.1
+
+#### Identified Limitations
+- **Lack of Memory:** The agent cannot recall previous states or actions, leading to suboptimal long-term decision-making.
+- **Limited Exploration:** Without memory or intrinsic motivation, exploration remains shallow, resulting in repetitive behavior.
+
+---
+
+### Improvement 1: Random Network Distillation (RND)
+
+#### Background
+Random Network Distillation (RND) is an exploration method that encourages agents to explore novel states by providing intrinsic rewards based on prediction error. It uses two neural networks:
+
+1. **Target Network:** Randomly initialized and kept fixed, maps observations to feature vectors
+2. **Predictor Network:** Trained to predict the target network's outputs via gradient descent
+
+The intrinsic reward is computed as the prediction error—high for novel states and low for frequently visited states.
+
+#### Key Improvements
+RND addresses the limited exploration of the baseline implementation. Since Crafter has sparse rewards, RND provides dense exploration bonuses while maintaining the original task structure.
+
+#### Architecture
+
+**Target Network (Fixed Random Features)**
+- Processes 64×64×3 RGB observations through three convolutional layers:
+  - Conv1: 32 filters, 3×3 kernel, stride 2, padding 1 → output: 32×32×32
+  - Conv2: 64 filters, 3×3 kernel, stride 2, padding 1 → output: 16×16×64
+  - Conv3: 64 filters, 3×3 kernel, stride 1, padding 1 → output: 16×16×64
+  - Flatten and fully connected: 16,384 → 512 features
+- All parameters frozen after initialization
+
+**Predictor Network (Learned Features)**
+- Identical architecture to target network
+- Trained to predict target network's output
+- Prediction error serves as intrinsic reward signal
+
+#### Reward Computation
+
+**Intrinsic Reward:**
+```
+r_intrinsic(s_t) = ||f_target(s_t) - f_predictor(s_t)||²
+```
+
+**Total Reward:**
+```
+r_total(s_t) = r_extrinsic(s_t) + λ · r_intrinsic(s_t)
+```
+where λ = 1.0 (intrinsic reward coefficient)
+
+#### Additional Hyperparameters
+- `intrinsic_reward_coef`: 1.0
+- `rnd_learning_rate`: 1 × 10⁻⁴
+- Training timesteps: 3 × 10⁶
+
+#### Exploration Mechanism
+1. Novel states produce high prediction errors → high intrinsic rewards
+2. Agent is incentivized to visit high-reward states
+3. As states become familiar, predictor improves → reduced intrinsic rewards
+4. Agent naturally shifts focus toward extrinsic task rewards
+
+#### Performance
+- **Average Reward:** 3.3 (~24% improvement over baseline)
+- **Maximum Reward:** 7.1 (~16% improvement over baseline)
+
+#### Key Observations
+- Higher rewards received more frequently due to increased exploration
+- Lower survival rates compared to baseline (exploration increases risk exposure)
+- Less consistent achievement unlock rates due to novelty-seeking behavior
+
+#### Strengths & Weaknesses
+
+**Strengths:**
+- Faster learning about environment dynamics
+- More achievements unlocked
+- Higher average rewards
+
+**Weaknesses:**
+- Requires significantly more training time
+- Small context window limits learning persistence
+- Achievements and associated rewards don't carry over to future episodes effectively
+
+#### Implementation Differences from Standard RND
+- Uses single combined value function (vs. separate extrinsic/intrinsic value functions)
+- Simplified CNN architecture with 3×3 kernels (optimized for 64×64 observations)
+- Single environment instance (vs. 128+ parallel environments)
+- Per-step predictor updates (vs. mini-batch updates)
+- Fixed intrinsic reward coefficient (vs. decay schedules)
+- No explicit reward clipping or separate advantage normalization
+
+---
+
+### Improvement 2: Recurrent PPO with LSTM
+
+#### Background
+RecurrentPPO extends PPO by adding support for recurrent neural network policies using LSTM (Long Short-Term Memory) layers. This allows the agent to maintain memory of past observations and actions, making it particularly useful for partially observable environments.
+
+#### Key Improvements
+Addresses memory and temporal reasoning limitations by maintaining hidden state across timesteps. The LSTM enables the agent to construct implicit representations of unobserved parts of the environment.
+
+#### Architecture
+**MultiInputLstmPolicy** with dual-stream observation:
+- **Visual stream:** Image observations
+- **Discrete stream:** 22-dimensional achievement vector tracking task completion states
+
+#### Additional Hyperparameters
+- `vf_coef` (value function coefficient): 0.5
+- `max_grad_norm` (maximum gradient norm): 0.5
+
+#### Reward Shaping
+Intrinsic reward shaping accelerates convergence through three components:
+- **Achievement bonuses:** 5.0× multiplier for newly completed achievements
+- **Survival bonuses:** +0.01 per timestep
+- **Exploration bonuses:** +0.001 per action
+
+#### Performance
+- **Average Reward:** 4.71 (77% improvement over baseline)
+- **Maximum Reward:** 11.1 (82% improvement over baseline)
+
+#### Behavioral Observations
+- More coherent decision sequences across time
+- Improved persistence in long-horizon tasks (crafting, navigation)
+- Less repetition of suboptimal exploration patterns
+- Smoother early learning and faster convergence
+
+#### Key Insight: Reward vs. Survival Trade-off
+Interestingly, R-PPO achieved higher average rewards despite lower overall survival rates. This is explained by:
+- LSTM memory enables recall and exploitation of previously observed opportunities
+- Higher reward density per timestep from decisive action-taking
+- Increased risk exposure from aggressive reward-seeking behavior
+- Reward shaping reinforces immediate sub-goal completion over conservative survival
+
+**Takeaway:** Longer episodes don't necessarily equate to better task performance—R-PPO prioritizes reward maximization over survival optimization.
+
+#### Strengths & Weaknesses
+
+**Strengths:**
+- Context-aware actions through memory retention
+- Better handling of partial observability
+- Higher cumulative rewards
+
+**Weaknesses:**
+- Wide reward variance indicates instability
+- Aggressive behavior reduces survival time
+- Could benefit from further hyperparameter tuning (learning rate, clipping threshold, hidden size)
+
+---
+
+## Algorithm Comparison Summary
+
+| Method | Avg Reward | Max Reward | Key Feature | Main Limitation |
+|--------|-----------|-----------|-------------|-----------------|
+| **Baseline PPO** | 2.66 | 6.1 | Stable, simple | No memory, limited exploration |
+| **PPO + RND** | 3.3 | 7.1 | Novelty-driven exploration | Requires extensive training |
+| **Recurrent PPO** | 4.71 | 11.1 | Temporal memory (LSTM) | Lower survival rate |
+
+---
+
+### Implementation Details
+
+#### Technologies Used
+- **PyTorch:** Neural network implementation
+- **Stable Baselines3:** PPO algorithm framework
+- **Gymnasium:** Environment wrapper interface
+
+#### Reproducibility
+- All experiments use seed 42
+- Evaluation environment seeded at 142 for deterministic but different trajectories
+- Evaluation every 10,000 training steps over 5 episodes
+
+#### Evaluation Protocol
+Performance metrics logged include:
+- Mean reward
+- Standard deviation
+- Minimum/maximum rewards
+- Episode lengths
+
+All results based on 1,000 evaluation episodes per agent.
+
 ## 🚀 Usage
 
 ### Training Agents
