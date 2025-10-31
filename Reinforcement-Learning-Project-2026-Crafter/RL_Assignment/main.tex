@@ -8,9 +8,8 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{moresize}
-\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 
-\usepackage[backend=biber,style=ieee]{biblatex} % Choose your style
+\usepackage[backend=biber,style=authoryear]{biblatex} % Choose your style
 \addbibresource{references.bib} % Use the name of your .bib file
     
 
@@ -82,8 +81,8 @@ Deep Q-Network (DQN) is a value-based reinforcement learning algorithm that comb
 \subsection*{Motivation}
 DQN is well-suited for the Crafter environment due to several key characteristics. The environment's discrete action space (with 17 possible actions) aligns naturally with DQN's design, where the network outputs Q-values for each action. Crafter's visual observation space ($64 \times 64 \times 3$ RGB images) benefits from DQN's convolutional neural network architecture, which can extract spatial features and patterns from the procedurally generated world. Additionally, DQN's experience replay mechanism is particularly valuable in Crafter, where diverse experiences across different procedurally generated worlds can be stored and reused, improving sample efficiency in an environment with sparse achievement rewards and dense survival rewards.
 
-\subsection*{Hyperparameters}
-The following hyperparameters were used for the baseline and first improvement DQN implementations.:
+\subsection*{Hyperparameters used across all agents}
+To ensure fair comparison and isolate the effects of algorithmic improvements, the following hyperparameters were standardized across all DQN implementations:
 
 \begin{table}[H]
 \centering
@@ -107,7 +106,6 @@ Total training timesteps & 500,000 \\
 \end{tabular}
 \caption{Standardized DQN hyperparameters}
 \end{table}
-The buffer size was reduced to 25,000 for the second improvement due to memory constraints.
 
 \subsection*{Baseline Implementation}
 
@@ -127,53 +125,13 @@ The agent processes raw RGB observations in the range [0, 255] and employs an ep
 
 The baseline DQN agent was evaluated over \textbf{50 episodes} after 500,000 training steps. Performance was measured using the standard Crafter evaluation metrics specified in the assignment requirements:
 
-\begin{table}[H]
-\centering
-\begin{tabular}{lr}
-\toprule
-\textbf{Metric} & \textbf{Value} \\
-\midrule
-Mean reward (cumulative) & $3.46 \pm 1.81$ \\
-Mean survival time (steps) & $193.02 \pm 80.24$ \\
-Achievements unlocked & 9/22 (40.9\%) \\
-Geometric mean (unlock rates) & 31.27\% \\
-\bottomrule
-\end{tabular}
-\caption{Baseline DQN performance metrics}
-\end{table}
+The baseline DQN agent was evaluated over \textbf{50 episodes} after 500,000 training steps. The agent achieved a mean cumulative reward of $3.46 \pm 1.81$, with mean survival time of $193.02 \pm 80.24$ steps. The agent successfully unlocked 9 out of 22 achievements (40.9\%), achieving a geometric mean unlock rate of 31.27\%.
 
 \textbf{Achievement Analysis:}
 
 The agent demonstrated competency in basic survival behaviors but failed to progress to advanced multi-step achievements. The unlock rates for individual achievements reveal clear behavioral patterns:
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lc}
-\toprule
-\textbf{Achievement} & \textbf{Unlock Rate (\%)} \\
-\midrule
-\multicolumn{2}{l}{\textit{High Success (>50\%)}} \\
-wake\_up & 88 \\
-collect\_wood & 80 \\
-collect\_drink & 74 \\
-collect\_sapling & 60 \\
-place\_plant & 52 \\
-place\_table & 50 \\
-\midrule
-\multicolumn{2}{l}{\textit{Moderate Success (10-50\%)}} \\
-eat\_cow & 22 \\
-defeat\_zombie & 8 \\
-make\_wood\_sword & 2 \\
-\midrule
-\multicolumn{2}{l}{\textit{Never Unlocked (0\%)}} \\
-All stone/iron tools & 0 \\
-All pickaxes & 0 \\
-collect\_coal, collect\_stone, collect\_iron & 0 \\
-\bottomrule
-\end{tabular}
-\caption{Baseline DQN achievement unlock rates (top performers and notable patterns)}
-\end{table}
+The agent demonstrated strong performance on basic survival tasks, with high unlock rates for wake\_up (88\%), collect\_wood (80\%), collect\_drink (74\%), collect\_sapling (60\%), place\_plant (52\%), and place\_table (50\%). Moderate success was observed in eat\_cow (22\%), defeat\_zombie (8\%), and make\_wood\_sword (2\%). However, the agent completely failed to unlock any advanced achievements requiring stone or iron tools, pickaxes of any tier, or collection of coal, stone, or iron resources (all 0\% unlock rates).
 
 The following figures visualize the performance distributions:
 
@@ -283,6 +241,8 @@ All hyperparameters remain identical to the baseline (see Table 1) to isolate th
 
 Improvement 1 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps.
 
+Improvement 1 was evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps. The agent achieved a mean reward of $4.32 \pm 1.30$, representing a \textbf{24.9\% improvement} over the baseline's 3.46 reward. Mean survival time was $197.66 \pm 57.73$ steps (comparable to baseline). The agent unlocked 10 out of 22 achievements with a geometric mean of 35.42\%, a \textbf{13.3\% improvement} over baseline. Notably, the standard deviation decreased from 1.81 to 1.30, indicating 28\% more consistent policy behavior.
+
 \textbf{Key Improvements:}
 
 \begin{itemize}
@@ -314,6 +274,10 @@ Improvement 1 was evaluated using the same protocol as the baseline: 50 episodes
 \end{figure}
 
 \subsubsection*{Achievement Progression Analysis}
+
+Comparing achievement unlock rates between baseline and Improvement 1 reveals significant behavioral changes:
+
+Comparing achievement unlock rates revealed significant behavioral improvements. The agent showed dramatic gains in collect\_sapling (60\% → 88\%, +47\%), defeat\_zombie (8\% → 28\%, +250\%), make\_wood\_sword (2\% → 6\%, +200\%), and critically unlocked make\_wood\_pickaxe for the first time (0\% → 4\%). High-performing achievements were maintained or improved: wake\_up (88\% → 88\%), collect\_wood (80\% → 86\%), place\_plant (52\% → 86\%, +65\%), and place\_table (50\% → 60\%). Interestingly, collect\_drink decreased (74\% → 48\%, -35\%) while eat\_cow increased slightly (22\% → 28\%), suggesting a strategic shift from pure survival optimization toward achievement-driven behaviors.
 
 \textbf{Behavioral Insights:}
 
