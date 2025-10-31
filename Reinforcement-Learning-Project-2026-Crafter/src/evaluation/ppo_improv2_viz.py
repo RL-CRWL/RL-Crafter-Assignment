@@ -13,11 +13,11 @@ base_env = make_crafter_env()
 env = AchievementTrackingWrapper(base_env)
 
 # ===== Load trained RecurrentPPO model =====
-model_path = "../../results/ppo_improv_2/recurrent_ppo_model"
+model_path = "../../results/PPO/models/ppo_improv_2/recurrent_ppo_model"
 model = RecurrentPPO.load(model_path, env=env)
 
 # ===== Parameters =====
-n_eval_episodes = 30
+n_eval_episodes = 1000
 gif_dir = "recurrent_ppo_highlights"
 os.makedirs(gif_dir, exist_ok=True)
 

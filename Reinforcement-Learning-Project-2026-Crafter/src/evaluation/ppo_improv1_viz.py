@@ -9,7 +9,7 @@ from utils.wrapper_ppo import make_crafter_env
 
 # === Load environment and model ===
 env = make_crafter_env()
-model_path = 'Reinforcement-Learning-Project-2026-Crafter/src/agents/results/ppo_rnd/ppo_rnd_model.zip'
+model_path = 'Reinforcement-Learning-Project-2026-Crafter/results/PPO/models/ppo_improv_1/ppo_rnd_model.zip'
 model = PPO.load(model_path, env=env)
 
 # === Parameters ===
