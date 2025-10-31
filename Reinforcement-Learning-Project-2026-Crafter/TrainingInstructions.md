@@ -24,6 +24,8 @@ stable-baselines3    2.3.2
 run test_crafter.py to check if everything got installed
 
 
+### PPO
+Refer to the makefile.
 
 ### Training
 python scripts/train.py --config DQN_CONFIG 
