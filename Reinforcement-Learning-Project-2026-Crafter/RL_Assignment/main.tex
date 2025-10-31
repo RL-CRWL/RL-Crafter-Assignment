@@ -326,9 +326,9 @@ Based on the analysis from Improvement 1, the improved CNN feature extraction sh
 
 \subsection*{Improvement 2: Residual Block CNN Enhancement with Frame-Stacking}
 
-The agent still struggled with temporal context and sample efficiency. To address this, we implemented \textbf{frame-stacking}, where the last $n$ frames are concatenated along the channel dimension, changing the input from $(C, W, H)$ to $(C \cdot n, W, H)$. This allows the network to see a short history of observations, providing temporal context that can improve decision-making, horizon planning, and sample efficiency.
+The agent still struggled with temporal context and sample efficiency. To address this, we implemented frame-stacking, where the last $n$ frames are concatenated along the channel dimension, changing the input from $(C, W, H)$ to $(C \cdot n, W, H)$. This allows the network to see a short history of observations, providing temporal context that can improve decision-making, horizon planning, and sample efficiency.
 
-To complement frame-stacking, \textbf{residual blocks} were added to the CNN feature extractor. Residual connections help gradients propagate more effectively through the network, improving training stability and feature representation. While they do not directly provide temporal memory, they strengthen the extracted features, which combined with frame-stacking, can further improve the agent's performance.
+To complement frame-stacking, residual blocks were added to the CNN feature extractor. Residual connections help gradients propagate more effectively through the network, improving training stability and feature representation. While they do not directly provide temporal memory, they strengthen the extracted features, which combined with frame-stacking, can further improve the agent's performance.
 
 \begin{enumerate}
 	\item \textbf{Residual Block:} Introduces skip connections that add the input to the output of convolutional layers, improving gradient flow and feature representation.
@@ -355,7 +355,10 @@ The same observation preprocessing and weight initialisations were used, however
 
 \subsubsection*{Evaluation Results (Eval 3)}
 
-Improvement 2 was re-evaluated using the same protocol as the baseline: 50 episodes after 500,000 training steps. This was to ensure correctness of the results, which proved to be similar to the original evaluation.
+Improvement 2 was evaluated using the same protocol: 50 episodes after 500,000 training steps. The agent achieved a mean reward of 3.24$\pm$ 1.37, representing a
+25.0\% decrease from Improvement 1's 4.32 reward and falling 6.4\% below the baseline's 3.46 reward. Mean survival time was 186.0$\pm$ 60.5 steps, a
+5.9\% decrease from Improvement 1 (197.66 steps) and 3.6\% below baseline (193.02 steps). The agent unlocked 7 out of 22 achievements with a geometric mean of 43.80\%, showing a 23.7\% improvement over Improvement 1's geometric mean (35.42\%) despite unlocking fewer total achievements. The standard deviation of 1.37 remained relatively stable compared to Improvement 1 (1.30).
+
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/DQNImprov2reward_distribution.png}
@@ -377,13 +380,14 @@ Improvement 2 was re-evaluated using the same protocol as the baseline: 50 episo
 \end{figure}
 
 \subsection*{Final Comparison}
+Improvement 2 was rerun under the same condition to confirm the results, achieving very similar performance and providing the final comparison figures.
+
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/DQNImprov2survival_comparison.png}
 	\caption{Comparison of the mean survival time (steps) of each agent version.}
 	\label{fig:dqn_comp_survival}
 \end{figure}
-\newpage
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.8\linewidth]{images/DQNImprov2reward_comparison.png}
@@ -413,11 +417,15 @@ Improvement 2 was re-evaluated using the same protocol as the baseline: 50 episo
 \end{figure}
 
 \begin{itemize}
-	\item \textbf{Reward Distribution:} As shown in Figure \ref{fig:dqn_comp_reward}, the baseline had the widest range of rewards, with majority being in the range of 2 and 4 and a low of roughly 0. Improvement 1 on the other hand had a lowest reward of 2. This demonstrates the success of the modified architecture to better extract the features of the environment. Although Improvement 2 started off similarly, it ultimately had a peak of 5 reward with majority between 3 and 4 with a few outliers.
-	\item \textbf{Mean reward:} Improvement 1 achieves a higher mean reward than Improvement 2, indicating more consistent policy performance in terms of immediate rewards, but achieves a lower mean reward than the baseline. It is possible that the extra layers required more than 500,000 timesteps to converge to a similar reward, or the added complexity of the residual connections made it more difficult to learn more efficient feature extraction.
-	\item \textbf{Achievement progression:} Despite lower mean reward, Improvement 2 achieves a higher geometric mean and overall achievement performance, suggesting better multi-step planning and strategic progress. As shown in Figure \ref{fig:dqn_comp_geo_mean}, 
-	\item \textbf{Trade-off:} Improvement 1 favors short-term reward optimization, while Improvement 2 favors long-term achievement unlocking, highlighting the impact of residual CNN and frame-stacking in supporting temporal planning.
+	\item \textbf{Reward Distribution:} As shown in Figure \ref{fig:dqn_comp_reward}, the baseline has the widest spread of rewards, with most episodes getting between 2 and 4 rewards and some dropping close to 0. Improvement 1 shows a tighter distribution with a minimum reward of 2 and median around 4, showing more reliable performance overall. Improvement 2 has a similar minimum to Improvement 1, but most rewards cluster around 3, with a few outlier episodes reaching as high as 6. This suggests Improvement 2 plays more consistently and more cautiously than Improvement 1.
+	
+	\item \textbf{Mean Reward:} As shown in Figure \ref{fig:dqn_comp_mean_reward}, Improvement 1 gets the highest mean reward at 4.4, which is a 22\% improvement over the baseline's 3.6. However, Improvement 2 drops back down to 3.3, falling 8\% below baseline and 25\% below Improvement 1. This drop in performance suggests that the changes made in Improvement 2 might have disrupted how the agent learns values or created an imbalance between exploration and exploitation. The lower reward could mean the agent needed more training time to fully converge, or the architectural changes made it focus more on long-term goals rather than immediate rewards.
+	
+	\item \textbf{Achievement Progression:} Even though Improvement 2 has lower mean reward, it actually does better on achievements, as shown in Figure \ref{fig:dqn_comp_geo_mean}. The geometric mean steadily increases: baseline (24.9\%) to Improvement 1 (37.2\%) and then to Improvement 2 (44.2\%), giving a 49\% improvement over baseline and 19\% improvement over Improvement 1. Looking at the achievement heatmap (Figure \ref{fig:dqn_comp_heatmap}), Improvement 2 focuses on doing fewer achievements really well (84\% unlock rates for collect\_drink, collect\_stone, collect\_wood, and wake\_up) instead of trying to unlock a wider variety of achievements.
+	
+	\item \textbf{Survival Time:} Figure \ref{fig:dqn_comp_survival} shows consistent survival across all three models, with mean survival times of 191, 191, and 197 steps for baseline, Improvement 1, and Improvement 2 respectively. This means the basic survival abilities stayed roughly the same across all modifications, and the main differences in performance come from how the agents make strategic decisions rather than just staying alive in the environment.
 \end{itemize}
+\textbf{Conclusion:} The results show an interesting trade-off between the two improvements. Improvement 1 achieves the best immediate reward performance with higher mean rewards and more stable episode outcomes, making it effective for short-term optimization. However, Improvement 2 demonstrates superior long-term strategic planning, as evidenced by its significantly higher geometric mean achievement score (44.2\%) despite lower mean rewards. This suggests that Improvement 2's architectural changes shifted the agent's behavior from reward maximization to goal-oriented planning, focusing on completing specific achievements with high success rates rather than accumulating immediate rewards. The consistent survival times across all models indicate that the core survival capabilities remain intact, and the performance differences reflect different strategic priorities rather than fundamental competence issues. Overall, Improvement 1 is better for immediate reward tasks, while Improvement 2 excels at structured, multi-step goal completion.
 
 \section*{Out-of-class Algorithm: PPO}
 
