@@ -6,6 +6,7 @@ Usage:
 """
 
 import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 import sys
 import numpy as np
 import json
@@ -162,12 +163,16 @@ def evaluate_model(model_path, env_config, n_episodes=50, model_name="Model", is
     geometric_mean = calculate_geometric_mean(achievement_rates)
     
     metrics = {
-        'mean_reward': np.mean(episode_rewards),
-        'std_reward': np.std(episode_rewards),
-        'mean_length': np.mean(episode_lengths),
-        'std_length': np.std(episode_lengths),
+        'mean_reward': float(np.mean(episode_rewards)),
+        'std_reward': float(np.std(episode_rewards)),
+        'min_reward': float(np.min(episode_rewards)),
+        'max_reward': float(np.max(episode_rewards)),
+        'mean_length': float(np.mean(episode_lengths)),
+        'std_length': float(np.std(episode_lengths)),
+        'min_length': float(np.min(episode_lengths)),
+        'max_length': float(np.max(episode_lengths)),
         'unique_achievements': len(all_achievements),
-        'geometric_mean': geometric_mean,
+        'geometric_mean': float(geometric_mean),
         'achievement_rates': achievement_rates,
         'all_rewards': episode_rewards,
         'all_lengths': episode_lengths
@@ -179,15 +184,72 @@ def evaluate_model(model_path, env_config, n_episodes=50, model_name="Model", is
     env.close()
     return metrics
 
+def save_results(metrics, save_dir='../../results/PPO/results/ppo_baseline/', n_episodes=50):
+    """Save evaluation results and plots"""
+    
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Save metrics to JSON
+    with open(os.path.join(save_dir, f'evaluation_metrics_{n_episodes}_episodes.json'), 'w') as f:
+        json.dump(metrics, f, indent=4)
+    
+    # Plot reward distribution
+    plt.figure(figsize=(10, 6))
+    plt.hist(metrics['all_rewards'], bins=20, edgecolor='black', alpha=0.7)
+    plt.axvline(metrics['mean_reward'], color='red', linestyle='--', 
+                label=f"Mean: {metrics['mean_reward']:.2f}")
+    plt.xlabel('Episode Reward')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of Episode Rewards')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig(os.path.join(save_dir, f'reward_distribution_{n_episodes}_episodes.png'), 
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    # Plot survival time distribution
+    plt.figure(figsize=(10, 6))
+    plt.hist(metrics['all_lengths'], bins=20, edgecolor='black', alpha=0.7, color='green')
+    plt.axvline(metrics['mean_length'], color='red', linestyle='--',
+                label=f"Mean: {metrics['mean_length']:.1f}")
+    plt.xlabel('Survival Time (steps)')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of Survival Times')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig(os.path.join(save_dir, f'survival_distribution_{n_episodes}_episodes.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    # Plot achievement rates
+    achievement_rates = metrics['achievement_rates']
+    sorted_achievements = sorted(achievement_rates.items(), key=lambda x: x[1], reverse=True)
+    
+    plt.figure(figsize=(12, 8))
+    achievements_names = [a[0] for a in sorted_achievements]
+    rates = [a[1] for a in sorted_achievements]
+    
+    colors = ['green' if r > 0 else 'gray' for r in rates]
+    plt.barh(achievements_names, rates, color=colors, alpha=0.7)
+    plt.xlabel('Unlock Rate (%)')
+    plt.title('Achievement Unlock Rates')
+    plt.grid(True, alpha=0.3, axis='x')
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f'achievement_rates_{n_episodes}_episodes.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    print(f"\n✅ Results saved to {save_dir}")
 
-def plot_comparison(all_metrics, save_path='../../results/PPO/results/comparison_plots.png'):
+
+def plot_comparison(all_metrics, save_path='../../results/PPO/results/comparison_plots.png', n_episodes=50):
     """Create comparison plots"""
     
     # Ensure results directory exists
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle('PPO Models Comparison (50 Episodes Each)', fontsize=16, fontweight='bold')
+    fig.suptitle(f'PPO Models Comparison ({n_episodes} Episodes Each)', fontsize=16, fontweight='bold')
     
     models = list(all_metrics.keys())
     colors = ['green', 'orange', 'purple', 'blue', 'red'][:len(models)]
@@ -343,14 +405,22 @@ def print_detailed_comparison(all_metrics):
 def main():
     """Main comparison function"""
     
+    n_episodes = 10
+    
+    results_dir='../../results/PPO/'
+    baseline_model_dir = 'ppo_baseline/ppo_baseline_model.zip'
+    improv1_model_dir = 'ppo_improv_1/ppo_rnd_model.zip'
+    improv2_model_dir = 'ppo_improv_2/recurrent_ppo_model.zip'
+    
     print("\n" + "="*70)
-    print("COMPARING 3 PPO MODELS OVER 50 EPISODES")
+    print(f"COMPARING 3 PPO MODELS OVER {n_episodes} EPISODES")
     print("="*70)
     
     # Define models to compare
     models = {
         'Baseline': {
-            'path': '../../results/PPO/models/ppo_baseline/ppo_baseline_model.zip',
+            'path': f'{results_dir}models/{baseline_model_dir}',
+            'results': f'{results_dir}/results/ppo_baseline/',
             'env_config': {
                 'seed': 142,  # Different seed for fair evaluation
                 'preprocess_type': 'none'
@@ -358,7 +428,8 @@ def main():
             'is_recurrent': False
         },
         'Improvement 1': {
-            'path': '../../results/PPO/models/ppo_improv_1/ppo_rnd_model.zip',
+            'path': f'{results_dir}models/{improv1_model_dir}',
+            'results': f'{results_dir}/results/ppo_improv_1/',
             'env_config': {
                 'seed': 142,
                 'preprocess_type': 'none'
@@ -366,7 +437,8 @@ def main():
             'is_recurrent': False
         },
         'Improvement 2 (LSTM)': {
-            'path': '../../results/PPO/models/ppo_improv_2/recurrent_ppo_model.zip',
+            'path': f'{results_dir}models/{improv2_model_dir}',
+            'results': f'{results_dir}/results/ppo_improv_2/',
             'env_config': {
                 'seed': 142,
                 'preprocess_type': 'none'
@@ -388,11 +460,12 @@ def main():
             metrics = evaluate_model(
                 config['path'],
                 config['env_config'],
-                n_episodes=1000,
+                n_episodes=n_episodes,
                 model_name=model_name,
                 is_recurrent=config.get('is_recurrent', False)
             )
             all_metrics[model_name] = metrics
+            save_results(metrics, config['results'], n_episodes)
         except Exception as e:
             print(f"\n❌ Error evaluating {model_name}: {e}")
             import traceback
@@ -405,14 +478,16 @@ def main():
     # Print comparison
     print_detailed_comparison(all_metrics)
     
+    jpg_results = f'{results_dir}results/final_comparison_{n_episodes}_episodes.png'
+    
     # Create plots
-    plot_comparison(all_metrics, '../../results/PPO/results/final_comparison.png')
+    plot_comparison(all_metrics, jpg_results, n_episodes)
     
     # Save results to JSON
-    results_file = '../../results/PPO/results/final_comparison_results.json'
+    json_results = f'{results_dir}results/final_comparison_results_{n_episodes}_episodes.json'
     
     # Ensure directory exists
-    os.makedirs(os.path.dirname(results_file), exist_ok=True)
+    os.makedirs(os.path.dirname(json_results), exist_ok=True)
     
     # Make serializable
     serializable_metrics = {}
@@ -427,17 +502,17 @@ def main():
             'achievement_rates': {k: float(v) for k, v in metrics['achievement_rates'].items()}
         }
     
-    with open(results_file, 'w') as f:
+    with open(json_results, 'w') as f:
         json.dump(serializable_metrics, f, indent=2)
     
-    print(f"\n💾 Results saved to: {results_file}")
+    print(f"\n💾 Results saved to: {json_results}")
     
     print("\n" + "="*70)
     print("✅ COMPARISON COMPLETE!")
     print("="*70)
     print(f"\n📁 Output files:")
-    print(f"  • Plots: ../../results/PPO/results/final_comparison.png")
-    print(f"  • Data:  ../../results/PPO/results/final_comparison_results.json")
+    print(f"  • Plots: {jpg_results}")
+    print(f"  • Data:  {json_results}")
     print("="*70 + "\n")
 
 
