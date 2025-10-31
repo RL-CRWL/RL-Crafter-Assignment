@@ -5,7 +5,14 @@
 .txt
 Miniconda3-latest-Linux-x86_64.sh
 __pycache__/
-evaluation_data.csv
-training_data.csv
-logdir
-**/__pycache__/
+# latex stuff
+*.aux
+*.bcf
+*.log
+*.run.xml
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.out
