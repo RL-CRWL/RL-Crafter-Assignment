@@ -130,6 +130,68 @@ The following weaknesses were identified in the baseline model:
 To address these issues, a Recurrent PPO (R-PPO) architecture was introduced. This variant augments the standard PPO with a recurrent neural network (RNN) layer, allowing the policy to maintain an internal state across time steps. This addition provides the agent with short-term memory, improving decision consistency under partial observability.
 
 \subsection*{Improvement 1: Random Network Distillation}
+\subsubsection*{Background}
+Random Network Distillation (RND) is an exploration method that encourages reinforcement learning agents to explore novel states by providing intrinsic rewards based on prediction error. The method uses two neural networks: a target network that is randomly initialized and kept fixed, and a predictor network that is trained to predict the target network's outputs. The target network maps observations to feature vectors and remains frozen throughout training. The predictor network shares the same input-output architecture and is trained via gradient descent to minimize the mean squared error. The intrinsic reward is computed as the prediction error. This error is high for novel or infrequent states (where the predictor hasn't learned well) and low for frequently visited states (where the predictor has converged). \parencite{burda2018exploration}
+
+\subsubsection*{Methodology}
+\textbf{\textit{Architecture}}\\
+\textit{Target Network (Fixed Random Features)} \\
+The target network is a randomly initialized convolutional neural network that remains fixed throughout training. It processes $64 \times 64 \times 3$ RGB observations through three convolutional layers:
+\begin{itemize}
+    \item Conv1: 32 filters, $3 \times 3$ kernel, stride 2, padding 1 $\rightarrow$ output: $32 \times 32 \times 32$
+    \item Conv2: 64 filters, $3 \times 3$ kernel, stride 2, padding 1 $\rightarrow$ output: $16 \times 16 \times 64$
+    \item Conv3: 64 filters, $3 \times 3$ kernel, stride 1, padding 1 $\rightarrow$ output: $16 \times 16 \times 64$
+    \item Flatten and fully connected layers: $16{,}384 \rightarrow 512$ features
+\end{itemize}
+
+All parameters are frozen after initialization to maintain consistent random target features.\\\\
+\textit{Predictor Network (Learned Features)} \\
+The predictor network shares an identical architecture with the target network but is trained to predict the target network's output. The prediction error serves as the intrinsic reward signal, where high error indicates novel states.\\\\
+\textbf{\textit{Intrinsic Reward Computation}}\\
+For each observed state $s_t$, the intrinsic reward is computed as:
+\begin{equation}
+r_{\text{intrinsic}}(s_t) = \|f_{\text{target}}(s_t) - f_{\text{predictor}}(s_t)\|^2
+\end{equation}
+where $f_{\text{target}}$ and $f_{\text{predictor}}$ are the outputs of the target and predictor networks respectively. The intrinsic rewards are normalized using running mean and variance statistics to maintain stable learning dynamics.\\\\
+\textbf{\textit{Reward Integration}}\\
+The total reward combines extrinsic (environment) and intrinsic rewards:
+\begin{equation}
+r_{\text{total}}(s_t) = r_{\text{extrinsic}}(s_t) + \lambda \cdot r_{\text{intrinsic}}(s_t)
+\end{equation}
+where $\lambda$ is the intrinsic reward coefficient (set to 1.0 by default). This is implemented via a custom Gymnasium wrapper (\texttt{RNDRewardWrapper}) that intercepts environment steps and augments rewards before they reach the PPO algorithm.\\\\
+\textbf{\textit{Training Procedure}}
+\begin{itemize}
+    \item \textbf{RND Module Updates:} The predictor network is trained using mean squared error loss between its outputs and the fixed target network outputs. The optimizer uses Adam with learning rate $1 \times 10^{-4}$.
+
+    \item \textbf{PPO Training:} The PPO agent is trained on the combined reward signal using standard hyperparameters and the following:
+\begin{itemize}
+    \item $intrinsic\_reward\_coef=1.0$
+    \item $rnd\_learning\_rate=1\times10^{-4}$
+\end{itemize}
+
+\item \textbf{Evaluation Protocol:} Agent performance is evaluated every 10,000 training steps using deterministic policy rollouts over 5 episodes in a separate evaluation environment. Metrics including mean reward, standard deviation, minimum/maximum rewards, and episode lengths are logged to CSV files for analysis.
+\end{itemize}
+\textbf{\textit{Exploration Mechanism}}\\
+The RND method encourages exploration through the following mechanism:
+\begin{enumerate}
+    \item Novel states produce high prediction errors, yielding high intrinsic rewards
+    \item The agent is incentivized to visit these high-reward states
+    \item As states become familiar, the predictor improves, reducing intrinsic rewards
+    \item The agent naturally shifts focus toward extrinsic task rewards
+\end{enumerate}
+This approach addresses the sparse reward problem in Crafter by providing dense exploration bonuses while maintaining the original task structure.\\\\
+\textbf{\textit{Implementation Details}}\\
+The implementation utilizes PyTorch for neural networks and Stable Baselines3 for the PPO algorithm. The RND networks use $3 \times 3$ convolutional kernels optimized for Crafter's $64 \times 64$ observation space. Running statistics for reward normalization use Welford's online algorithm to maintain numerical stability. All experiments use seed 42 for reproducibility, with the evaluation environment seeded at 142 to ensure different but deterministic trajectories.
+\subsubsection*{Results}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{PPO Improvement 1 Evaluation Performance.png}
+    \caption{PPO Improvement 1 Evaluation Performance}
+    \label{fig:placeholder}
+\end{figure}
+\subsubsection*{Discussion}
+\textbf{\textit{Differences from Standard RND Implementation}}\\
+This implementation differs from the standard Random Network Distillation approach proposed by \cite{burda2018exploration} in several key aspects. The standard RND implementation uses two separate value functions---one for extrinsic returns and one for intrinsic returns---allowing different discount factors to be applied (typically $\gamma=0.99$ for intrinsic and $\gamma=0.999$ for extrinsic rewards), whereas this implementation uses a single combined value function with a uniform discount factor of 0.99. The CNN architecture has been simplified and adapted for Crafter's $64 \times 64$ observation space, using smaller $3 \times 3$ kernels throughout instead of the larger $8 \times 8$ and $4 \times 4$ kernels designed for $84 \times 84$ Atari frames, and omitting batch normalization and other regularization layers. Unlike standard RND which normalizes observations before feeding them to the RND networks and maintains separate statistics for intrinsic and extrinsic rewards, this implementation applies only basic running statistics normalization to intrinsic rewards using Welford's algorithm, with raw observations fed directly to the networks. The standard approach typically employs 128 or more parallel environments for efficient data collection and diverse training batches, updating the predictor network on mini-batches from the rollout buffer with multiple gradient steps per rollout, whereas this implementation uses a single environment instance with per-step predictor updates, resulting in slower data collection and potentially noisier gradient estimates. Additionally, standard RND implementations include explicit reward clipping to prevent extreme values, separate advantage normalization for intrinsic and extrinsic components, and curiosity-driven exploration decay schedules, none of which are present in this implementation which uses a fixed intrinsic reward coefficient. Finally, the evaluation procedure differs: standard RND evaluates with intrinsic rewards completely disabled to measure true task performance without exploration bonuses, while this implementation uses deterministic policy evaluation without explicitly disabling the RND wrapper, making the separation between exploration and exploitation performance less clear.
 \subsection*{Improvement 2: Long-Short Term Memory}
 
 \subsubsection*{Improvement 2 Implementation}
