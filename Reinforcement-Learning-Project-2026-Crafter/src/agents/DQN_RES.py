@@ -1,5 +1,5 @@
 """
-DQN Improvement 2: Frame Stacking for Temporal Context
+DQN Improvement 2: Residual Block with Frame Stacking for Temporal Context
 
 PREVIOUS PROBLEM:
 - Curriculum learning approaches (extended exploration) consistently underperform

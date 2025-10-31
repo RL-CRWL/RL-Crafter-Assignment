@@ -1,3 +1,5 @@
+# file used to compare models by evaluating them in the crafter environment
+
 import sys
 import os
 from pathlib import Path
