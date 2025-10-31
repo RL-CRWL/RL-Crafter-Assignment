@@ -1,5 +1,13 @@
 # Crafter Reinforcement Learning Project
 
+# Contributors
+| Student Number | Name                |
+| -------------- | ---------------     |
+| 2602515        | Taboka Chloe Dube   |
+| 2541693        | Wendy Maboa         |
+| 2596852        | Liam Brady          |
+| 2333776        | Refiloe Mopeloa     |
+
 <div align="center">
 
 ![Crafter Environment](https://github.com/danijar/crafter/raw/main/media/terrain.png)
