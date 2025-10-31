@@ -124,7 +124,7 @@ DQN_IMPROVEMENT_2 = {
 }
 
 DQN_IMPROVEMENT_3 = {
-    'name': 'DQN_Improvement3_LSTM',
+    'name': 'DQN_Improvement3_Residual',
     'total_timesteps': 500000,
     'eval_freq': 10000,
     'save_freq': 50000,

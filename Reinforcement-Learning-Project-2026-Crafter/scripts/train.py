@@ -51,11 +51,11 @@ except ImportError as e:
     HAS_IMPROVEMENT2 = False
 
 try:
-    from src.agents.DQN_DUEL import DQNImprovement3DuelCNN
-    print("  ✓ DQNImprovement3Duel")
+    from src.agents.DQN_RES import DQNImprovement3Residual
+    print("  ✓ DQNImprovement3Res")
     HAS_IMPROVEMENT3 = True
 except ImportError as e:
-    print(f"  ✗ DQNImprovement3Duel failed: {e}")
+    print(f"  ✗ DQNImprovement3Res failed: {e}")
     HAS_IMPROVEMENT3 = False
 
 
@@ -70,9 +70,9 @@ def create_agent(config):
         print("🎬 Creating DQN Improvement 2 (Frame Stacking) agent...")
         
         # Import the frame stacking agent
-        from src.agents.DQN_DUEL import DQNImprovement3DuelCNN
+        from src.agents.DQN_RES import DQNImprovement3Residual
         
-        return DQNImprovement3DuelCNN(
+        return DQNImprovement3Residual(
             learning_rate=config['learning_rate'],
             buffer_size=config['buffer_size'],
             learning_starts=config['learning_starts'],
