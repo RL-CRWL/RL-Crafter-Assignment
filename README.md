@@ -92,10 +92,8 @@ Reinforcement-Learning-Project-2026-Crafter/
 │   ├── agents/
 │   │   ├── __init__.py
 │   │   ├── DQN_baseline.py               # Baseline DQN implementation
-│   │   ├── DQN_FRAMESTACK.py             # DQN with frame stacking
 │   │   ├── DQN_improv1.py                # Improvement 1: Enhanced CNN architecture
-│   │   ├── DQN_improv2.py                # Improvement 2: Curriculum Learning
-│   │   ├── DQN_improv3.py                # Improvement 3: Advanced exploration
+│   │   ├── DQN_RES.py                    # DQN with residual block and frame stacking
 │   │   ├── PPO_baseline.py               # Baseline PPO implementation
 │   │   ├── PPO_improv1.py                # PPO Improvement 1
 │   │   ├── PPO_improv2.py                # PPO Improvement 2 (Recurrent PPO)
@@ -103,8 +101,6 @@ Reinforcement-Learning-Project-2026-Crafter/
 │   │       └── __init__.py
 │
 │   ├── utils/
-│   │   ├── ego_wrapper.py                # Ego-centric observation wrapper
-│   │   ├── test_egowrapper.py            # Unit tests for ego_wrapper
 │   │   ├── wrapper_ppo.py                # PPO-specific environment wrapper
 │   │   └── wrappers.py                   # General environment wrappers
 │
@@ -117,7 +113,6 @@ Reinforcement-Learning-Project-2026-Crafter/
 │       ├── Evaluate.py                   # General evaluation entrypoint
 │       ├── Visualiser.py                 # Visualization of training and rewards
 │       ├── compare_models.py             # Compare trained model performance
-│       ├── debuggy.py                    # Debugging and quick test script
 │       ├── ppo_baseline_viz.py           # Visualization for PPO baseline
 │       ├── ppo_improv1_viz.py            # Visualization for PPO Improvement 1
 │       └── ppo_improv2_viz.py            # Visualization for PPO Improvement 2
@@ -127,18 +122,28 @@ Reinforcement-Learning-Project-2026-Crafter/
 │   └── evaluate_saved_model.py           # Load and evaluate saved models
 │
 ├── results/
-│   └── PPO/
-│       ├── models/                       # Saved model checkpoints
-│       │   ├── ppo_baseline/
-│       │   │   └── ppo_baseline_model.zip
-│       │   ├── ppo_improv_1/
-│       │   │   └── ppo_rnd_model.zip
-│       │   └── ppo_improv_2/
-│       │       └── recurrent_ppo_model.zip
-│       └── results/                      # Evaluation outputs, metrics, and logs
-│           ├── ppo_baseline/
-│           ├── ppo_improv_1/
-│           └── ppo_improv_2/
+│   ├── PPO/
+│   │    ├── models/                       # Saved model checkpoints
+│   │    │   ├── ppo_baseline/
+│   │    │   │   └── ppo_baseline_model.zip
+│   │    │   ├── ppo_improv_1/
+│   │    │   │   └── ppo_rnd_model.zip
+│   │    │   └── ppo_improv_2/
+│   │    │       └── recurrent_ppo_model.zip
+│   │    └── results/                      # Evaluation outputs, metrics, and logs
+│   │        ├── ppo_baseline/
+│   │        ├── ppo_improv_1/
+│   │        └── ppo_improv_2/
+│   │ 
+│   ├──── improv2_eval # contains images of DQN Improvement 2 analysis
+│   │   
+│   ├──── DQN_Baseline_GTX750Ti_20251030_001758 # contains model of DQN baseline
+│   │
+│   ├──── DQN_Improvement1_Simplified # contains model of DQN Improvement 1
+│   │
+│   ├──── DQN_Improvement3_Residual_20251031_115230 # contains model of DQN Improvement 2 (apologies for naming scheme)
+│   │
+│   └──── Final_comparison # contains images of DQN baseline and improvements comparisons
 │
 ├── requirements.txt                      # Python dependencies
 ├── Makefile                              # Automates PPO model training and evaluation
