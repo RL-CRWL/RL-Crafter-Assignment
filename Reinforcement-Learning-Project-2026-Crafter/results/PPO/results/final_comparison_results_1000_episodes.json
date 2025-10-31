@@ -1,0 +1,71 @@
+{
+  "Baseline": {
+    "mean_reward": 2.66,
+    "std_reward": 1.5473848907107757,
+    "mean_length": 177.294,
+    "std_length": 48.288151383129176,
+    "unique_achievements": 12,
+    "geometric_mean": 10.568715033517535,
+    "achievement_rates": {
+      "wake_up": 0.502,
+      "place_plant": 0.684,
+      "collect_wood": 0.774,
+      "collect_sapling": 0.702,
+      "place_table": 0.456,
+      "eat_cow": 0.09,
+      "collect_drink": 0.191,
+      "defeat_zombie": 0.054,
+      "make_wood_pickaxe": 0.058,
+      "make_wood_sword": 0.053,
+      "collect_stone": 0.004,
+      "defeat_skeleton": 0.002
+    }
+  },
+  "Improvement 1": {
+    "mean_reward": 3.307,
+    "std_reward": 1.3364696030961571,
+    "mean_length": 172.168,
+    "std_length": 54.97093573880656,
+    "unique_achievements": 12,
+    "geometric_mean": 11.01638185842984,
+    "achievement_rates": {
+      "wake_up": 0.861,
+      "place_plant": 0.689,
+      "make_wood_sword": 0.104,
+      "collect_wood": 0.88,
+      "collect_sapling": 0.79,
+      "place_table": 0.58,
+      "make_wood_pickaxe": 0.099,
+      "collect_drink": 0.132,
+      "defeat_zombie": 0.039,
+      "eat_cow": 0.028,
+      "collect_stone": 0.003,
+      "defeat_skeleton": 0.003
+    }
+  },
+  "Improvement 2 (LSTM)": {
+    "mean_reward": 4.71,
+    "std_reward": 2.0923431840881173,
+    "mean_length": 179.393,
+    "std_length": 67.7789535991815,
+    "unique_achievements": 15,
+    "geometric_mean": 15.080876882988663,
+    "achievement_rates": {
+      "wake_up": 0.806,
+      "place_plant": 0.797,
+      "make_wood_sword": 0.495,
+      "collect_wood": 0.859,
+      "collect_sapling": 0.849,
+      "place_table": 0.688,
+      "collect_drink": 0.432,
+      "make_wood_pickaxe": 0.353,
+      "eat_cow": 0.105,
+      "collect_stone": 0.118,
+      "place_stone": 0.072,
+      "defeat_zombie": 0.045,
+      "collect_coal": 0.018,
+      "defeat_skeleton": 0.009,
+      "place_furnace": 0.003
+    }
+  }
+}
