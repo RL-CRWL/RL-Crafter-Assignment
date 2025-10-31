@@ -24,22 +24,52 @@ Deep Q-Network (DQN) implementations for the Crafter survival game environment. 
 ```
 Reinforcement-Learning-Project-2026-Crafter/
 ├── configs/
-│   └── configs.py              # Training configurations
+│   └── configs.py                        # Training configurations
+│
 ├── src/
 │   ├── agents/
-│   │   ├── DQN_baseline.py     # Baseline DQN implementation
-│   │   ├── DQN_improv1.py      # Improvement 1: Enhanced CNN
-│   │   └── DQN_improv2.py      # Improvement 2: Curriculum Learning
+│   │   ├── __init__.py
+│   │   ├── DQN_baseline.py               # Baseline DQN implementation
+│   │   ├── DQN_FRAMESTACK.py             # DQN with frame stacking
+│   │   ├── DQN_improv1.py                # Improvement 1: Enhanced CNN architecture
+│   │   ├── DQN_improv2.py                # Improvement 2: Curriculum Learning
+│   │   ├── DQN_improv3.py                # Improvement 3: Advanced exploration
+│   │   ├── PPO_baseline.py               # Baseline PPO implementation
+│   │   ├── PPO_improv1.py                # PPO Improvement 1
+│   │   ├── PPO_improv2.py                # PPO Improvement 2
+│   │   └── results/
+│   │       └── __init__.py
+│
 │   ├── utils/
-│   │   └── wrappers.py         # Environment wrappers
+│   │   ├── ego_wrapper.py                # Ego-centric observation wrapper
+│   │   ├── test_egowrapper.py            # Unit tests for ego_wrapper
+│   │   ├── wrapper_ppo.py                # PPO-specific environment wrapper
+│   │   └── wrappers.py                   # General environment wrappers
+│
 │   └── evaluation/
-│       └── compare_models.py   # Model comparison script
+│       ├── ppo_baseline_highlights/      # Highlight frames for PPO baseline runs
+│       ├── recurrent_ppo_highlights/     # Highlight frames for Recurrent PPO runs
+│       ├── Compare-PPO.py                # Compare PPO agents (baseline vs improved)
+│       ├── Evaluate-PPO.py               # Evaluate PPO agents
+│       ├── Evaluate-Recurrent.py         # Evaluate Recurrent PPO performance
+│       ├── Evaluate.py                   # General evaluation entrypoint
+│       ├── Visualiser.py                 # Visualization of results and rewards
+│       ├── compare_models.py             # Compare models statistically
+│       ├── debuggy.py                    # Debugging script for agent performance
+│       ├── ppo_baseline_viz.py           # PPO baseline visualization
+│       ├── ppo_improv1_viz.py            # Visualization for PPO Improvement 1
+│       ├── ppo_improv2_viz.py            # Visualization for PPO Improvement 2
+│
 ├── scripts/
-│   ├── train.py                # Main training script
-│   └── evaluate_saved_model.py # Evaluation script
-├── results/                    # Training results and saved models
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+│   ├── train.py                          # Main training script for all agents
+│   └── evaluate_saved_model.py           # Load and evaluate trained models
+│
+├── results/                              # Saved models, logs, metrics, videos
+│
+├── requirements.txt                      # Python dependencies
+└── README.md                             # Project overview and usage guide
+
+
 ```
 
 ## 🚀 Quick Start
