@@ -421,16 +421,22 @@ In addition these are the following theoretical benefits of PPO:
 
 \subsection*{Hyperparamters used across all agents}
 \textbf{PPO Training:} These hyperparameters were standardized for all agents so as to make sure the comparison is done based on the differing algorithms and not hyperparameter tuning.
-\begin{itemize}
-    \item Learning rate: $3 \times 10^{-4}$
-    \item Rollout steps (n\_steps): 2,048
-    \item Batch size: 64
-    \item Epochs per update: 10
-    \item Discount factor ($\gamma$): 0.99
-    \item GAE lambda ($\lambda$): 0.95
-    \item Clip range: 0.2
-    \item Entropy coefficient: 0.01
-\end{itemize}
+\begin{table}[H]
+\centering
+\caption{Hyperparameters used for PPO training}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\ \midrule
+Learning rate & $3 \times 10^{-4}$ \\
+Rollout steps (\texttt{n\_steps}) & 2,048 \\
+Batch size & 64 \\
+Epochs per update & 10 \\
+Discount factor ($\gamma$) & 0.99 \\
+GAE lambda ($\lambda$) & 0.95 \\
+Clip range & 0.2 \\
+Entropy coefficient & 0.01 \\ \bottomrule
+\end{tabular}
+\end{table}
 
 \subsection*{Baseline Implementation}
 The baseline agent was implemented using the Stable-Baselines3 PPO algorithm. The initial hyperparameters were chosen to provide stable learning without aggressive updates, ensuring reproducibility. The agent at this point perceives the environment through single still images (frames) rather than continuous sequences, meaning it has only a limited view of the environment at each step.
